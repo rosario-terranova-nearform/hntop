@@ -206,7 +206,7 @@ After implementing a ticket, apply a check ✅ in the relative title.
 
 **Spec refs:** §7
 
-### T2 — Fetching layer & time-window logic
+### T2 — Fetching layer & time-window logic ✅
 
 **Description:** Implement `src/api/hn.ts`: `RANGE_SECONDS` mapping (§3), `fetchStories(range, page)` against Algolia `search_by_date` (client-side sort by `points` desc per §2.1), `fetchItemWithComments(id)` against Algolia `items/{id}`. Wrap both in `useStories`/`useItem` React Query hooks with sane retry/staleness defaults (§8 rate-limit note).
 
@@ -218,7 +218,7 @@ After implementing a ticket, apply a check ✅ in the relative title.
 
 **Spec refs:** §2.1, §3, §6
 
-### T3 — URL state & `<SortControls />`
+### T3 — URL state & `<SortControls />` ✅
 
 **Description:** Wire `range`/`page` search params via `useSearchParams` as the single source of truth (no separate store). Build `<SortControls />` (Day/Week/Month/Year/All) that updates `range` and resets `page` to 0 on click.
 
