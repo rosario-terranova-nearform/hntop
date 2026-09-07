@@ -230,7 +230,7 @@ After implementing a ticket, apply a check ✅ in the relative title.
 
 **Spec refs:** §4, §5.2
 
-### T4 — `<StoryList />`, `<StoryCard />` & pagination
+### T4 — `<StoryList />`, `<StoryCard />` & pagination ✅
 
 **Description:** `<StoryList />` reads `range`/`page` from the URL, calls `useStories`, renders loading skeleton / error state / list of `<StoryCard />`. `<StoryCard />` shows rank, title (external link if `url` present, else `/item/:id`), domain (parsed from URL host), points, author, relative age, comment count linking to `/item/:id`. `<Pagination />` (Prev/Next) updates the `page` param.
 
@@ -327,5 +327,17 @@ Deferred per §9/§10; not scheduled for v1. Kept in the same ticket format so t
 ### T13 — Persist last-used range in localStorage
 
 **Description:** Default the landing state to the last-used sort/range from localStorage; explicit URL params still take precedence.
+
+**Spec refs:** §10
+
+### T14 — Custom date range picker
+
+**Description:** Add a calendar control letting the user pick a specific day or a custom date range instead of the fixed Day/Week/Month/Year/All buckets. Selected date(s) drive the same `numericFilters` lower/upper bound logic as §3, exposed via new URL params (e.g. `from`/`to`) alongside `range`.
+
+**Spec refs:** §3, §4, §10
+
+### T15 — Hackier header graphic with dark/light theme support
+
+**Description:** Replace the plain "HN Top" text header with a more hacker-styled graphic/logo (e.g. terminal/glitch aesthetic), rendered correctly in both dark and light themes.
 
 **Spec refs:** §10

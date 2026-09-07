@@ -53,11 +53,11 @@ export async function fetchStories(
     const lowerBound = Math.floor(Date.now() / 1000) - RANGE_SECONDS[range];
     params.set("numericFilters", `created_at_i>${lowerBound}`);
   }
-  const res = await fetch(`${ALGOLIA_BASE}/search_by_date?${params}`);
+  const res = await fetch(`${ALGOLIA_BASE}/search?${params}`);
   if (!res.ok) throw new Error(`Algolia search failed: ${res.status}`);
   const data = await res.json();
   return {
-    hits: [...data.hits].sort((a, b) => b.points - a.points),
+    hits: data.hits,
     nbPages: data.nbPages,
     page: data.page,
   };

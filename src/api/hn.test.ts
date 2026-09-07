@@ -43,8 +43,15 @@ describe("fetchStories", () => {
     expect(url).toMatch(/numericFilters=created_at_i%3E\d+/);
   });
 
-  it("sorts hits by points descending", async () => {
+  it("uses the popularity-sorted search endpoint", async () => {
+    await fetchStories("day", 0);
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(url).toContain("/search?");
+    expect(url).not.toContain("search_by_date");
+  });
+
+  it("returns hits as given by Algolia", async () => {
     const result = await fetchStories("day", 0);
-    expect(result.hits.map((h) => h.points)).toEqual([50, 30, 10]);
+    expect(result.hits.map((h) => h.points)).toEqual([10, 50, 30]);
   });
 });
