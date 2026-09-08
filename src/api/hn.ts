@@ -28,10 +28,10 @@ export interface StoryListResult {
 
 export interface HNItem {
   id: number;
-  title: string;
+  title: string | null;
   url: string | null;
-  points: number;
-  author: string;
+  points: number | null;
+  author: string | null;
   created_at: string;
   created_at_i: number;
   text: string | null;

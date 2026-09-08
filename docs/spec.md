@@ -243,7 +243,7 @@ After implementing a ticket, apply a check ✅ in the relative title.
 
 **Spec refs:** §5.2, §8
 
-### T5 — `<StoryDetail />` (story header)
+### T5 — `<StoryDetail />` (story header) ✅
 
 **Description:** Route `/item/:id`, fetch full item via `useItem`, render the story header with the same fields as `<StoryCard />` plus full text for Ask HN/Show HN posts.
 
