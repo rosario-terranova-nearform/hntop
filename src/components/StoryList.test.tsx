@@ -47,7 +47,7 @@ describe("StoryList", () => {
 
   it("clamps Prev/Next at the first/last page", async () => {
     renderAt("/?range=day&page=0", [hit], 1);
-    expect(await screen.findByRole("link", { name: "A story" })).toBeInTheDocument();
+    expect(await screen.findByText("A story")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Prev" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
   });

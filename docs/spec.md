@@ -1,12 +1,13 @@
 # HN Top — Spec
 
-A React app for browsing Hacker News stories with Reddit-style time-window sorting (Day / Week / Month / Year / All), plus a comment thread view.
+A React app for browsing Hacker News stories with Reddit-style time-window sorting (Day / Week / Month / Year / All), a comment thread view, and an AI-generated daily recap of the best stories.
 
 ## 1. Goals
 
 - Let users sort HN stories by points within a chosen time window, similar to Reddit's "Top" sort.
 - Support viewing a story's full comment thread inside the app (no need to leave for HN itself).
-- Keep the app simple, fast, and stateless on the backend — no backend required, all data comes from public APIs.
+- Surface a short AI-generated recap of the day's best stories on the home page, generated once per day and cached, not regenerated per visitor (§9).
+- Keep the app simple and fast. The story list, sorting, and comment threads need no backend at all; the one exception is a small serverless function that generates and caches the daily recap.
 
 ## 2. Data sources
 
@@ -43,6 +44,12 @@ Used for comment threads, since Algolia's comment data is sometimes structured d
 
 Alternative: Algolia also exposes `GET /items/{id}` which returns the full nested comment tree in one call. This is simpler (one request instead of N recursive calls) and is the preferred approach — fall back to the Firebase API only if Algolia's item endpoint is unavailable or incomplete.
 
+### 2.3 OpenRouter (recap generation, server-side only)
+
+Base URL: `https://openrouter.ai/api/v1`
+
+Called only from the `recap` Netlify Function, never from the browser (the API key must not reach the client). Used to generate the daily recap's prose. See §9 for the full flow, prompt, storage, and model fallback.
+
 ## 3. Time window → date range mapping
 
 Given "now" as `t0`:
@@ -73,6 +80,8 @@ Query params:
 
 State management: no global store needed. Use React Router's `useSearchParams` as the source of truth; derive fetch parameters from it. React Query (`useQuery`) keyed on `[range, page]` handles caching, loading, and error state, and automatically refetches when the key changes.
 
+The daily recap (§9) has no URL state of its own — it's derived entirely from `range === 'day'` and today's UTC date, not from a query param.
+
 ## 5. Routes & components
 
 ### 5.1 Routes
@@ -86,6 +95,14 @@ State management: no global store needed. Use React Router's `useSearchParams` a
 
 - Segmented control / button group: Day, Week, Month, Year, All
 - Updates `range` search param on click (resets `page` to 0)
+
+**`<DailyRecap />`**
+
+- Rendered immediately after `<SortControls />`, only when `range === 'day'`
+- Fetches from the `recap` Netlify Function via a `useRecap` React Query hook, mirroring the `useStories`/`useItem` pattern
+- Loading: skeleton in place of the callout, does not block `<StoryList />` from rendering
+- Error or "no recap": renders nothing (silent fail — see §8, §9.5)
+- Success: short intro paragraph followed by a one-line blurb per story, all shown inline (no collapse)
 
 **`<StoryList />`**
 
@@ -122,7 +139,7 @@ Displays per story:
 
 ## 6. Fetching layer
 
-Centralize API calls in a small module, e.g. `src/api/hn.ts`:
+Centralize HN API calls in a small module, `src/api/hn.ts`:
 
 ```ts
 async function fetchStories(
@@ -157,6 +174,8 @@ async function fetchItemWithComments(id: string): Promise<HNItem> {
 
 Wrap both in React Query hooks (`useStories`, `useItem`) for caching/retry/staleness config.
 
+The recap fetch is a separate client module, `src/api/recap.ts`, that calls the `recap` Netlify Function (§9) rather than Algolia directly. Wrapped in a `useRecap` hook for the same caching/loading/error ergonomics.
+
 ## 7. Tech stack
 
 - **React** (Vite scaffold)
@@ -164,7 +183,10 @@ Wrap both in React Query hooks (`useStories`, `useItem`) for caching/retry/stale
 - **TanStack Query (React Query)** — data fetching, caching, loading/error states
 - **dompurify** — sanitize comment HTML before render
 - Styling: plain CSS or Tailwind (either works; no strong dependency either way)
-- No backend, no database, no auth — fully static/client-side app, deployable to any static host (Vercel, Netlify, GitHub Pages)
+- **Netlify Functions (Node)** — the only backend in the app; runs the `recap` function (§9). Everything else stays a static client-side SPA.
+- **Netlify Blobs** — key-value storage for cached daily recaps (§9.3)
+- **OpenRouter** — free-tier LLM API called server-side by the `recap` function (§9.4)
+- Deployment: **Netlify**, git-integrated auto-deploy on push to `main`, default `*.netlify.app` subdomain, no router basename
 
 ## 8. Error handling & edge cases
 
@@ -173,36 +195,95 @@ Wrap both in React Query hooks (`useStories`, `useItem`) for caching/retry/stale
 - Deleted/dead stories or comments: Algolia items may have `null` text or a `deleted`/`dead` flag — render a "[deleted]" placeholder instead of blank space.
 - Malformed URLs in stories (self-posts / Ask HN have no `url`): link to `/item/:id` instead of external link.
 - Comment tree depth: very deep threads should not break layout — cap visual indentation (e.g., stop increasing indent past depth 6, but keep nesting logically).
+- Recap generation failure (OpenRouter down, rate-limited, or malformed response after the fallback-model retry): the `<DailyRecap />` callout renders nothing; nothing is cached, so the next visitor's request retries generation from scratch (§9.4, §9.5).
+- Fewer than 10 qualifying day-range stories: the recap uses however many exist; zero stories means no recap is generated or shown.
+- Concurrent first-of-day requests: accepted possible duplicate OpenRouter call, no distributed locking (§9.2) — free-tier quota (50 requests/day, account-wide) comfortably covers the roughly one call/day this feature produces even with occasional duplicates.
 
-## 9. Out of scope (v1)
+## 9. Daily Recap feature
+
+### 9.1 Overview
+
+A short AI-generated recap of the day's best stories, shown as a callout on the home page when `range=day` is selected. Generated once per UTC day, on demand, by the first visitor whose request finds no cached recap yet; every subsequent visitor that day gets the cached result. Day-only for v1 — Week/Month/Year/All recaps are deferred (§10, T20).
+
+### 9.2 Trigger & caching flow
+
+1. `<DailyRecap />` calls the Netlify Function at `/.netlify/functions/recap` on mount, whenever `range === 'day'`.
+2. The function computes today's UTC date key (`YYYY-MM-DD`) and reads blob `recaps/{date}` from Netlify Blobs.
+3. Cache hit: return the stored recap directly, no LLM call.
+4. Cache miss: fetch the top 10 day-range stories (same Algolia query/sort `fetchStories('day', 0)` already uses, taking the first 10 of the sorted result), build the prompt, call OpenRouter (§9.4), write the result to Blobs, return it.
+5. No locking: two requests racing before either write completes may both call the LLM and both write the same key. Last write wins; this is accepted as a rare, harmless duplicate cost (§8).
+
+### 9.3 Storage schema (Netlify Blobs)
+
+- Store: `recaps` (global/site-wide, not deploy-scoped, so it persists across deploys and is shared by every function invocation).
+- Key: UTC date, `YYYY-MM-DD`.
+- Value (JSON):
+
+```json
+{
+  "date": "2026-09-09",
+  "intro": "short paragraph summarizing today's themes",
+  "stories": [
+    {
+      "objectID": "123456",
+      "title": "...",
+      "url": "https://example.com/...",
+      "points": 512,
+      "blurb": "one-line reason this made today's list"
+    }
+  ],
+  "model": "inclusionai/ling-3.0-flash-sante:free"
+}
+```
+
+- Past days' recaps are retained indefinitely for internal history. No UI reads anything but today's key (§10 — no browsing UI in v1).
+
+### 9.4 Prompt & model
+
+- Input to the LLM: title, points, author, and domain for the top 10 day-range stories (fields already available from `fetchStories`). The LLM only writes prose — story selection is the existing points-sort, not an LLM judgment call.
+- Output requested: one short intro paragraph plus one one-line blurb per story, in a fixed JSON shape matching §9.3.
+- Model: OpenRouter `inclusionai/ling-3.0-flash-sante:free` (primary). On any failure (rate limit, timeout, malformed response), retry once against `nvidia/nemotron-3-super-120b-a12b:free` (fallback, different provider pool). If both fail, the function returns a "no recap available" response and caches nothing.
+- If fewer than 10 qualifying stories exist for the day, use however many are available; zero stories skips generation entirely (no LLM call, no cache write).
+
+### 9.5 UI
+
+- `<DailyRecap />` (§5.2): callout after `<SortControls />`, visible only when `range === 'day'`.
+- Loading: skeleton/shimmer, non-blocking — `<StoryList />` renders independently.
+- Error/no-recap: renders nothing. A broken recap must never make the core app look broken.
+- Success: intro paragraph, then each story's blurb inline underneath, linking the same way `<StoryCard />` would (external URL if present, else `/item/:id`).
+
+## 10. Out of scope (v1)
 
 - User accounts, voting, submitting stories/comments (HN API is read-only anyway; no write access exists).
 - "Hot"/decayed-score sorting (possible v2 enhancement, see below).
 - Search by keyword (could reuse the same Algolia endpoint later with a `query` param).
+- Recaps for Week/Month/Year/All time windows — day-only for v1 (see T20 in the v2 backlog).
+- Browsing historical daily recaps — past recaps are retained in storage (§9.3) but no UI reads them yet.
 
-## 10. Possible v2 enhancements
+## 11. Possible v2 enhancements
 
 - Add a keyword search box (Algolia `search` endpoint already supports `query`).
 - Add a decayed "hot" score option alongside pure point-sort, using an HN/Reddit-style formula: `score = points / (age_hours + 2)^gravity`.
 - Infinite scroll instead of pagination buttons.
 - Persist last-used sort/range in localStorage as the default landing state (URL param still takes precedence if present).
+- Extend AI recap generation to Week/Month/Year/All windows, each regenerated on its own cadence (T20).
+- Historical recap browsing UI, surfacing the archive of past daily recaps already retained in storage (§9.3).
 
-## 11. Tickets — v1
+## 12. Tickets — v1
 
-Stack decisions locked in for these tickets: TypeScript, Tailwind v4 + shadcn/ui, pnpm, React Router v7, TanStack Query, Vitest + React Testing Library, GitHub Pages deployment (repo `hntop`, served at `/hntop/`).
+Stack decisions locked in for these tickets: TypeScript, Tailwind v4 + shadcn/ui, pnpm, React Router v7, TanStack Query, Vitest + React Testing Library, Netlify deployment (default subdomain, no base path), Netlify Functions + Netlify Blobs for the recap backend, OpenRouter for recap generation.
 
 After implementing a ticket, apply a check ✅ in the relative title.
 
 ### T1 — Project scaffold ✅
 
-**Description:** Bootstrap the app: Vite + React + TypeScript template, pnpm as package manager, Tailwind v4 + shadcn/ui initialized (base color, CSS variables), React Router v7 and TanStack Query installed, Vitest + React Testing Library configured. Set `vite.config.ts` `base: '/hntop/'` up front so later tickets don't need to touch it.
+**Description:** Bootstrap the app: Vite + React + TypeScript template, pnpm as package manager, Tailwind v4 + shadcn/ui initialized (base color, CSS variables), React Router v7 and TanStack Query installed, Vitest + React Testing Library configured. (Originally scoped a `/hntop/` base path for GitHub Pages; superseded by the Netlify decision (T9) — the app is served from the site root with no basename.)
 
 **Acceptance criteria:**
 
 - `pnpm dev` runs a blank Vite+React+TS app.
 - Tailwind classes and at least one shadcn component (e.g. `Button`) render correctly.
 - `pnpm test` runs Vitest successfully with zero tests (empty pass).
-- `vite.config.ts` has `base: '/hntop/'`.
 
 **Spec refs:** §7
 
@@ -254,7 +335,7 @@ After implementing a ticket, apply a check ✅ in the relative title.
 
 **Spec refs:** §5.3, §8
 
-### T6 — `<CommentThread />` (recursive)
+### T6 — `<CommentThread />` (recursive) ✅
 
 **Description:** Recursive component rendering a comment's author, age, and HTML-decoded/sanitized text (via `dompurify`) with `dangerouslySetInnerHTML`. Renders children recursively with indentation, capped visually past depth 6 (but still nested logically). Per-comment collapse/expand as local component state (not URL state).
 
@@ -290,54 +371,112 @@ After implementing a ticket, apply a check ✅ in the relative title.
 
 **Spec refs:** §2.1, §3
 
-### T9 — GitHub Pages deployment
+### T9 — Netlify deployment
 
-**Description:** Deploy the built app to GitHub Pages as a project site at `/hntop/`. Use `BrowserRouter` with `basename="/hntop"` (not `HashRouter`) to keep the clean URLs from §4. Add a GitHub Actions workflow that builds and publishes on push to `main`. Add a `404.html` (copy of `index.html` with the standard `spa-github-pages` redirect script) so direct navigation/refresh on `/item/:id` doesn't 404.
+**Description:** Deploy the built app to Netlify as a static site on the default `*.netlify.app` subdomain — no custom domain, no router basename. Add `netlify.toml` with the build config (`command`, `publish = "dist"`), a functions directory declaration (for T10's Netlify Function), and a catch-all SPA redirect (`/* /index.html 200`) so direct navigation/refresh on `/item/:id` doesn't 404. Connect the repo via Netlify's native git integration so every push to `main` auto-deploys; no GitHub Actions workflow needed.
 
 **Acceptance criteria:**
 
-- Pushing to `main` triggers a workflow that builds and publishes to GitHub Pages with no manual step.
-- Visiting `https://<user>.github.io/hntop/item/123` directly (not via client-side nav) loads the app and resolves to that route, not a 404.
+- Pushing to `main` triggers a Netlify deploy automatically, no manual step and no GitHub Actions workflow file.
+- Visiting `/item/123` directly (not via client-side nav) loads the app and resolves to that route via the `netlify.toml` redirect, not a 404.
 - Internal links use router navigation, not full-page reloads.
+- No basename/base path configured; the app is served from the site root.
 
-**Spec refs:** §7
+**Spec refs:** §7, §9
 
-## 12. Tickets — v2 backlog
+### T10 — Netlify Functions & Blobs scaffold
 
-Deferred per §9/§10; not scheduled for v1. Kept in the same ticket format so they're ready to pick up without re-deriving from the spec.
+**Description:** Set up the serverless plumbing for the recap feature: a Netlify Function at `netlify/functions/recap.ts`, wired into `netlify.toml`, and a thin wrapper around `@netlify/blobs` for reading/writing the `recaps` store. No recap logic yet — just enough to read/write a test key and return JSON, proving the deploy pipeline works end to end.
 
-### T10 — Keyword search
+**Acceptance criteria:**
+
+- `netlify dev` runs the function locally and it responds to `GET /.netlify/functions/recap`.
+- The function can write a value to the `recaps` Blobs store and read it back.
+- `@netlify/blobs` and Netlify's function types are added as dependencies.
+
+**Spec refs:** §9.2, §9.3
+
+### T11 — Recap generation logic
+
+**Description:** Implement the full `recap` function per §9: compute the UTC date key, check the Blobs cache, on a miss fetch the top 10 day-range stories (reuse the Algolia query/sort logic from `src/api/hn.ts`), build the prompt, call OpenRouter (`inclusionai/ling-3.0-flash-sante:free` primary, `nvidia/nemotron-3-super-120b-a12b:free` fallback on error), parse the response into the §9.3 JSON shape, write it to Blobs, and return it. On total failure, return a "no recap" response without caching anything.
+
+**Acceptance criteria:**
+
+- A cache hit returns the stored blob without calling OpenRouter.
+- A cache miss calls OpenRouter, stores the result keyed by UTC date, and returns it.
+- A fewer-than-10-stories day still produces a recap using however many stories exist; a zero-story day returns "no recap" without calling the LLM.
+- Primary model failure triggers exactly one fallback-model retry before giving up.
+- `OPENROUTER_API_KEY` is read from a Netlify environment variable, never hardcoded.
+
+**Spec refs:** §9.2, §9.4, §8
+
+### T12 — `<DailyRecap />` component
+
+**Description:** Add `<DailyRecap />` to the home page, rendered after `<SortControls />` and visible only when `range === 'day'`. Fetches from the recap function via a `useRecap` hook, shows a loading skeleton while generation is in flight, renders the intro paragraph + per-story blurbs on success, and renders nothing on error or "no recap" (§9.5).
+
+**Acceptance criteria:**
+
+- Not rendered at all when `range` is `week`/`month`/`year`/`all`.
+- Shows a skeleton while the request is in flight, without blocking `<StoryList />` from rendering.
+- Renders nothing (no error UI) if the function returns an error or a "no recap" response.
+- Each story blurb links to the same target `<StoryCard />` would use (external URL if present, else `/item/:id`).
+
+**Spec refs:** §9.5
+
+### T13 — Recap tests
+
+**Description:** Vitest unit tests for the pure logic behind the recap function: UTC date-key computation, the Blobs cache-hit/cache-miss branch, and the fallback-model retry logic, all with mocked `fetch`/Blobs calls (consistent with the T8 pattern).
+
+**Acceptance criteria:**
+
+- UTC date-key computation is covered across a day boundary (e.g. 23:59 vs 00:01 UTC).
+- Cache-hit path is covered (mocked Blobs returns a value, OpenRouter is never called).
+- Fallback-model retry is covered (primary call mocked to fail, fallback call mocked to succeed).
+
+**Spec refs:** §9.2, §9.4
+
+## 13. Tickets — v2 backlog
+
+Deferred per §10/§11; not scheduled for v1. Kept in the same ticket format so they're ready to pick up without re-deriving from the spec.
+
+### T14 — Keyword search
 
 **Description:** Add a search box using the Algolia `search` endpoint's `query` param, reusing the existing fetching/pagination layer.
 
-**Spec refs:** §9, §10
+**Spec refs:** §10, §11
 
-### T11 — "Hot" decayed-score sort
+### T15 — "Hot" decayed-score sort
 
 **Description:** Add a sort mode alongside pure point-sort using `score = points / (age_hours + 2)^gravity`.
 
-**Spec refs:** §9, §10
+**Spec refs:** §10, §11
 
-### T12 — Infinite scroll
+### T16 — Infinite scroll
 
 **Description:** Replace Prev/Next pagination with infinite scroll (append pages as the user scrolls).
 
-**Spec refs:** §10
+**Spec refs:** §11
 
-### T13 — Persist last-used range in localStorage
+### T17 — Persist last-used range in localStorage
 
 **Description:** Default the landing state to the last-used sort/range from localStorage; explicit URL params still take precedence.
 
-**Spec refs:** §10
+**Spec refs:** §11
 
-### T14 — Custom date range picker
+### T18 — Custom date range picker
 
 **Description:** Add a calendar control letting the user pick a specific day or a custom date range instead of the fixed Day/Week/Month/Year/All buckets. Selected date(s) drive the same `numericFilters` lower/upper bound logic as §3, exposed via new URL params (e.g. `from`/`to`) alongside `range`.
 
-**Spec refs:** §3, §4, §10
+**Spec refs:** §3, §4, §11
 
-### T15 — Hackier header graphic with dark/light theme support
+### T19 — Hackier header graphic with dark/light theme support
 
 **Description:** Replace the plain "HN Top" text header with a more hacker-styled graphic/logo (e.g. terminal/glitch aesthetic), rendered correctly in both dark and light themes.
 
-**Spec refs:** §10
+**Spec refs:** §11
+
+### T20 — Week/Month/Year/All recaps
+
+**Description:** Extend the recap feature (§9) beyond Day: generate and cache an equivalent recap for Week/Month/Year/All, each on its own regeneration cadence (e.g. the week's recap regenerates once a week, the month's once a month, and so on), reusing the same Blobs-cache-then-generate flow and OpenRouter models as the daily recap.
+
+**Spec refs:** §9, §10, §11

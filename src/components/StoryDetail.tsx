@@ -1,6 +1,8 @@
 import { useParams } from "react-router";
+import DOMPurify from "dompurify";
 import { useItem, type HNItem } from "@/api/hn";
 import { domainFromUrl, relativeAge } from "@/lib/utils";
+import { CommentThread } from "@/components/CommentThread";
 
 function countComments(children: HNItem[]): number {
   return children.reduce((n, c) => n + 1 + countComments(c.children), 0);
@@ -59,9 +61,16 @@ export function StoryDetail() {
         comments
       </div>
       {data.text && (
-        // ponytail: unsanitized text render, swap for dompurify + dangerouslySetInnerHTML in T6
-        <div className="mt-3 whitespace-pre-wrap text-sm">{data.text}</div>
+        <div
+          className="mt-3 text-sm [&_a]:underline"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(data.text) }}
+        />
       )}
+      <div className="mt-2">
+        {data.children.map((child) => (
+          <CommentThread key={child.id} comment={child} />
+        ))}
+      </div>
     </div>
   );
 }
