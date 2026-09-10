@@ -28,3 +28,15 @@ export function domainFromUrl(url: string | null): string | null {
     return null
   }
 }
+
+// Shared "[deleted]"/"[dead]" placeholder for StoryCard/StoryDetail/CommentThread (§8).
+export function deletedLabel(entity: {
+  author: string | null
+  title?: string | null
+  text?: string | null
+  dead?: boolean
+}): string | null {
+  if (entity.dead) return "[dead]"
+  if (!entity.author && !entity.title && !entity.text) return "[deleted]"
+  return null
+}

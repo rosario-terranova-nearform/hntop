@@ -11,13 +11,14 @@ export const RANGE_SECONDS: Record<Exclude<Range, "all">, number> = {
 
 export interface HNHit {
   objectID: string;
-  title: string;
+  title: string | null;
   url: string | null;
   points: number;
-  author: string;
+  author: string | null;
   created_at: string;
   created_at_i: number;
   num_comments: number;
+  dead?: boolean;
 }
 
 export interface StoryListResult {
@@ -36,6 +37,7 @@ export interface HNItem {
   created_at_i: number;
   text: string | null;
   children: HNItem[];
+  dead?: boolean;
 }
 
 const ALGOLIA_BASE = "https://hn.algolia.com/api/v1";
@@ -69,12 +71,16 @@ export async function fetchItemWithComments(id: string): Promise<HNItem> {
   return res.json();
 }
 
+// Backoff instead of React Query's default 3 immediate retries (§8: Algolia rate limits).
+const retryDelay = (attempt: number) => Math.min(1000 * 2 ** attempt, 10_000);
+
 export function useStories(range: Range, page: number) {
   return useQuery({
     queryKey: ["stories", range, page],
     queryFn: () => fetchStories(range, page),
     staleTime: 60_000,
     retry: 2,
+    retryDelay,
   });
 }
 
@@ -84,5 +90,6 @@ export function useItem(id: string) {
     queryFn: () => fetchItemWithComments(id),
     staleTime: 60_000,
     retry: 2,
+    retryDelay,
   });
 }

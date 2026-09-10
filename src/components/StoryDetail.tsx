@@ -1,7 +1,7 @@
 import { useParams } from "react-router";
 import DOMPurify from "dompurify";
 import { useItem, type HNItem } from "@/api/hn";
-import { domainFromUrl, relativeAge } from "@/lib/utils";
+import { deletedLabel, domainFromUrl, relativeAge } from "@/lib/utils";
 import { CommentThread } from "@/components/CommentThread";
 
 function countComments(children: HNItem[]): number {
@@ -26,9 +26,11 @@ export function StoryDetail() {
     );
   }
 
+  const deleted = deletedLabel(data);
+
   if (!data.author && !data.title) {
     return (
-      <div className="py-8 text-center text-muted-foreground">[deleted]</div>
+      <div className="py-8 text-center text-muted-foreground">{deleted}</div>
     );
   }
 
@@ -44,19 +46,17 @@ export function StoryDetail() {
             rel="noreferrer"
             className="text-lg font-medium hover:underline"
           >
-            {data.title ?? "[deleted]"}
+            {data.title ?? deleted}
           </a>
         ) : (
-          <span className="text-lg font-medium">
-            {data.title ?? "[deleted]"}
-          </span>
+          <span className="text-lg font-medium">{data.title ?? deleted}</span>
         )}
         {domain && (
           <span className="text-xs text-muted-foreground">{domain}</span>
         )}
       </div>
       <div className="text-xs text-muted-foreground">
-        {data.points ?? 0} points by {data.author ?? "[deleted]"} ·{" "}
+        {data.points ?? 0} points by {data.author ?? deleted} ·{" "}
         {relativeAge(data.created_at_i)} · {countComments(data.children)}{" "}
         comments
       </div>

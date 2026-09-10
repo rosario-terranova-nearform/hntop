@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router";
 import { ExternalLink, MessageSquare } from "lucide-react";
 import type { HNHit } from "@/api/hn";
-import { domainFromUrl, relativeAge } from "@/lib/utils";
+import { deletedLabel, domainFromUrl, relativeAge } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export function StoryCard({ hit, rank }: { hit: HNHit; rank: number }) {
@@ -9,6 +9,7 @@ export function StoryCard({ hit, rank }: { hit: HNHit; rank: number }) {
   const domain = domainFromUrl(hit.url);
   const itemHref = `/item/${hit.objectID}`;
   const modalLinkState = { backgroundLocation: location };
+  const deleted = deletedLabel(hit);
 
   return (
     <div className="flex gap-3 border-b border-border py-3">
@@ -17,13 +18,14 @@ export function StoryCard({ hit, rank }: { hit: HNHit; rank: number }) {
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-2">
-          <span className="font-medium">{hit.title}</span>
+          <span className="font-medium">{hit.title ?? deleted}</span>
           {domain && (
             <span className="text-xs text-muted-foreground">{domain}</span>
           )}
         </div>
         <div className="text-xs text-muted-foreground">
-          {hit.points} points by {hit.author} · {relativeAge(hit.created_at_i)}
+          {hit.points} points by {hit.author ?? deleted} ·{" "}
+          {relativeAge(hit.created_at_i)}
         </div>
         <div className="mt-2 flex gap-2">
           {hit.url && (

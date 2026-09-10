@@ -1,7 +1,7 @@
 import { useState } from "react";
 import DOMPurify from "dompurify";
 import type { HNItem } from "@/api/hn";
-import { relativeAge } from "@/lib/utils";
+import { deletedLabel, relativeAge } from "@/lib/utils";
 
 const MAX_INDENT_DEPTH = 6;
 
@@ -13,7 +13,7 @@ export function CommentThread({
   depth?: number;
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const isDeleted = !comment.author && !comment.text;
+  const deleted = deletedLabel(comment);
   const indent = Math.min(depth, MAX_INDENT_DEPTH) * 16;
 
   return (
@@ -29,12 +29,11 @@ export function CommentThread({
         >
           [{collapsed ? "+" : "−"}]
         </button>
-        {isDeleted ? "[deleted]" : comment.author} ·{" "}
-        {relativeAge(comment.created_at_i)}
+        {comment.author ?? deleted} · {relativeAge(comment.created_at_i)}
       </div>
       {!collapsed && (
         <>
-          {!isDeleted && comment.text && (
+          {!deleted && comment.text && (
             <div
               className="mt-1 text-sm [&_a]:underline"
               dangerouslySetInnerHTML={{

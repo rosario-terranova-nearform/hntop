@@ -348,7 +348,7 @@ After implementing a ticket, apply a check ✅ in the relative title.
 
 **Spec refs:** §5.3, §8
 
-### T7 — Error, empty & edge-case states
+### T7 — Error, empty & edge-case states ✅
 
 **Description:** Sweep the app for the §8 cases not already covered by earlier tickets: React Query retry/backoff defaults for Algolia rate limits, consistent empty-state UI for the story list, consistent "[deleted]" handling shared between `<StoryCard />`/`<StoryDetail />`/`<CommentThread />` rather than duplicated per component.
 
@@ -359,7 +359,7 @@ After implementing a ticket, apply a check ✅ in the relative title.
 
 **Spec refs:** §8
 
-### T8 — Tests
+### T8 — Tests ✅
 
 **Description:** Vitest unit tests for the pure logic in `src/api/hn.ts` (range→timestamp math, points-descending sort). React Testing Library smoke test per route (`/` renders a story list container without crashing; `/item/:id` renders a story header without crashing, given a mocked fetch).
 
