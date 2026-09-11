@@ -6,8 +6,9 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 function Home() {
   return (
-    <div className="mx-auto max-w-3xl p-4">
-      <h1 className="mb-4 text-2xl font-semibold">HN Top</h1>
+    <div className="mx-auto max-w-3xl p-4 2xl:max-w-5xl">
+      <h1 className="text-2xl font-semibold">Hacker News Top</h1>
+      <p className="mb-4 text-sm text-muted-foreground">Hacker News, sorted by what actually is interesting</p>
       <SortControls />
       <StoryList />
     </div>
@@ -16,7 +17,7 @@ function Home() {
 
 function Item() {
   return (
-    <div className="mx-auto max-w-3xl p-4">
+    <div className="mx-auto max-w-3xl p-4 2xl:max-w-5xl">
       <StoryDetail />
     </div>
   );
@@ -26,9 +27,9 @@ function ItemModal() {
   const navigate = useNavigate();
   return (
     <Dialog open onOpenChange={(open) => !open && navigate(-1)}>
-      <DialogContent className="max-h-[85vh] min-w-0 max-w-2xl overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="min-w-0 max-w-2xl sm:max-w-2xl">
         <DialogTitle className="sr-only">Story details</DialogTitle>
-        <div className="min-w-0 break-words">
+        <div className="max-h-[80vh] min-w-0 overflow-y-auto break-words">
           <StoryDetail />
         </div>
       </DialogContent>
