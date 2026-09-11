@@ -384,7 +384,7 @@ After implementing a ticket, apply a check ✅ in the relative title.
 
 **Spec refs:** §7, §9
 
-### T10 — Netlify Functions & Blobs scaffold
+### T10 — Netlify Functions & Blobs scaffold ✅
 
 **Description:** Set up the serverless plumbing for the recap feature: a Netlify Function at `netlify/functions/recap.ts`, wired into `netlify.toml`, and a thin wrapper around `@netlify/blobs` for reading/writing the `recaps` store. No recap logic yet — just enough to read/write a test key and return JSON, proving the deploy pipeline works end to end.
 

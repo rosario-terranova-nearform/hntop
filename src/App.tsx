@@ -29,7 +29,7 @@ function ItemModal() {
     <Dialog open onOpenChange={(open) => !open && navigate(-1)}>
       <DialogContent className="min-w-0 max-w-2xl sm:max-w-2xl">
         <DialogTitle className="sr-only">Story details</DialogTitle>
-        <div className="max-h-[80vh] min-w-0 overflow-y-auto break-words">
+        <div className="max-h-[80vh] min-w-0 overflow-x-hidden overflow-y-auto break-words [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <StoryDetail />
         </div>
       </DialogContent>
