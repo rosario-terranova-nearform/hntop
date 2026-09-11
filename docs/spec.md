@@ -371,7 +371,7 @@ After implementing a ticket, apply a check ✅ in the relative title.
 
 **Spec refs:** §2.1, §3
 
-### T9 — Netlify deployment
+### T9 — Netlify deployment ✅
 
 **Description:** Deploy the built app to Netlify as a static site on the default `*.netlify.app` subdomain — no custom domain, no router basename. Add `netlify.toml` with the build config (`command`, `publish = "dist"`), a functions directory declaration (for T10's Netlify Function), and a catch-all SPA redirect (`/* /index.html 200`) so direct navigation/refresh on `/item/:id` doesn't 404. Connect the repo via Netlify's native git integration so every push to `main` auto-deploys; no GitHub Actions workflow needed.
 
