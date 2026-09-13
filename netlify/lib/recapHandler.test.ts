@@ -4,13 +4,13 @@ const { getRecap, setRecap } = vi.hoisted(() => ({
   getRecap: vi.fn(),
   setRecap: vi.fn(),
 }));
-vi.mock("../lib/recapStore.js", () => ({ getRecap, setRecap }));
+vi.mock("./recapStore.js", () => ({ getRecap, setRecap }));
 
 const { generateRecap, utcDateKey } = vi.hoisted(() => ({
   generateRecap: vi.fn(),
   utcDateKey: vi.fn(() => "2026-09-13"),
 }));
-vi.mock("../lib/recap.js", () => ({ generateRecap, utcDateKey }));
+vi.mock("./recap.js", () => ({ generateRecap, utcDateKey }));
 
 const { fetchStories } = vi.hoisted(() => ({ fetchStories: vi.fn() }));
 vi.mock("../../src/api/hn.js", () => ({
@@ -18,7 +18,7 @@ vi.mock("../../src/api/hn.js", () => ({
   RANGE_SECONDS: { day: 1, week: 1, month: 1, year: 1 },
 }));
 
-import handler from "./recap.js";
+import handler from "../functions/recap.js";
 
 function request(range?: string) {
   const url = range
