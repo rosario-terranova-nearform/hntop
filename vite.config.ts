@@ -1,7 +1,7 @@
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -16,5 +16,7 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/test/setup.ts',
     passWithNoTests: true,
+    // `netlify dev`/`netlify build` copy netlify/functions (tests included) into .netlify/ to bundle them.
+    exclude: [...configDefaults.exclude, '.netlify/**'],
   },
 })

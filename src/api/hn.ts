@@ -57,22 +57,17 @@ export async function fetchStories(
   }
   const res = await fetch(`${ALGOLIA_BASE}/search?${params}`);
   if (!res.ok) throw new Error(`Algolia search failed: ${res.status}`);
-  const data = await res.json();
-  return {
-    hits: data.hits,
-    nbPages: data.nbPages,
-    page: data.page,
-  };
+  return (await res.json()) as StoryListResult;
 }
 
 export async function fetchItemWithComments(id: string): Promise<HNItem> {
   const res = await fetch(`${ALGOLIA_BASE}/items/${id}`);
   if (!res.ok) throw new Error(`Algolia item fetch failed: ${res.status}`);
-  return res.json();
+  return (await res.json()) as HNItem;
 }
 
 // Backoff instead of React Query's default 3 immediate retries (§8: Algolia rate limits).
-const retryDelay = (attempt: number) => Math.min(1000 * 2 ** attempt, 10_000);
+export const retryDelay = (attempt: number) => Math.min(1000 * 2 ** attempt, 10_000);
 
 export function useStories(range: Range, page: number) {
   return useQuery({

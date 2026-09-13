@@ -199,66 +199,60 @@ The recap fetch is a separate client module, `src/api/recap.ts`, that calls the 
 - Fewer than 10 qualifying day-range stories: the recap uses however many exist; zero stories means no recap is generated or shown.
 - Concurrent first-of-day requests: accepted possible duplicate OpenRouter call, no distributed locking (§9.2) — free-tier quota (50 requests/day, account-wide) comfortably covers the roughly one call/day this feature produces even with occasional duplicates.
 
-## 9. Daily Recap feature
+## 9. Recap feature
 
 ### 9.1 Overview
 
-A short AI-generated recap of the day's best stories, shown as a callout on the home page when `range=day` is selected. Generated once per UTC day, on demand, by the first visitor whose request finds no cached recap yet; every subsequent visitor that day gets the cached result. Day-only for v1 — Week/Month/Year/All recaps are deferred (§10, T20).
+A short AI-generated recap of the best stories in the selected time window, shown as a callout on the home page for every range (Day/Week/Month/Year/All), not just Day. Generated once per UTC day per range, on demand, by the first visitor whose request finds no cached recap yet; every subsequent visitor that day (for that range) gets the cached result. Every range regenerates daily — there is no separate weekly/monthly/yearly cadence (see the `ponytail` note in T11 for the tradeoff).
+
+The recap is one overall paragraph summarizing themes across the top stories — not a per-story blurb list.
 
 ### 9.2 Trigger & caching flow
 
-1. `<DailyRecap />` calls the Netlify Function at `/.netlify/functions/recap` on mount, whenever `range === 'day'`.
-2. The function computes today's UTC date key (`YYYY-MM-DD`) and reads blob `recaps/{date}` from Netlify Blobs.
+1. `<Recap range={range} />` calls the Netlify Function at `/.netlify/functions/recap?range={range}` on mount, for whatever range is currently selected.
+2. The function computes today's UTC date key (`YYYY-MM-DD`) and reads blob `recaps/{range}:{date}` from Netlify Blobs.
 3. Cache hit: return the stored recap directly, no LLM call.
-4. Cache miss: fetch the top 10 day-range stories (same Algolia query/sort `fetchStories('day', 0)` already uses, taking the first 10 of the sorted result), build the prompt, call OpenRouter (§9.4), write the result to Blobs, return it.
+4. Cache miss: fetch the top 10 stories for that range (same Algolia query/sort `fetchStories(range, 0)` already uses, taking the first 10 of the sorted result), build the prompt, call OpenRouter (§9.4), write the result to Blobs, return it.
 5. No locking: two requests racing before either write completes may both call the LLM and both write the same key. Last write wins; this is accepted as a rare, harmless duplicate cost (§8).
 
 ### 9.3 Storage schema (Netlify Blobs)
 
 - Store: `recaps` (global/site-wide, not deploy-scoped, so it persists across deploys and is shared by every function invocation).
-- Key: UTC date, `YYYY-MM-DD`.
+- Key: `{range}:{date}`, e.g. `day:2026-09-13`, `week:2026-09-13`.
 - Value (JSON):
 
 ```json
 {
   "date": "2026-09-09",
-  "intro": "short paragraph summarizing today's themes",
-  "stories": [
-    {
-      "objectID": "123456",
-      "title": "...",
-      "url": "https://example.com/...",
-      "points": 512,
-      "blurb": "one-line reason this made today's list"
-    }
-  ],
+  "range": "day",
+  "summary": "short paragraph summarizing this window's themes and highlights",
   "model": "inclusionai/ling-3.0-flash-sante:free"
 }
 ```
 
-- Past days' recaps are retained indefinitely for internal history. No UI reads anything but today's key (§10 — no browsing UI in v1).
+- Past days' recaps are retained indefinitely for internal history. No UI reads anything but today's key for the current range (§10 — no browsing UI in v1).
 
 ### 9.4 Prompt & model
 
-- Input to the LLM: title, points, author, and domain for the top 10 day-range stories (fields already available from `fetchStories`). The LLM only writes prose — story selection is the existing points-sort, not an LLM judgment call.
-- Output requested: one short intro paragraph plus one one-line blurb per story, in a fixed JSON shape matching §9.3.
-- Model: OpenRouter `inclusionai/ling-3.0-flash-sante:free` (primary). On any failure (rate limit, timeout, malformed response), retry once against `nvidia/nemotron-3-super-120b-a12b:free` (fallback, different provider pool). If both fail, the function returns a "no recap available" response and caches nothing.
-- If fewer than 10 qualifying stories exist for the day, use however many are available; zero stories skips generation entirely (no LLM call, no cache write).
+- Input to the LLM: title, points, and author for the top 10 stories in the selected range (fields already available from `fetchStories`). The LLM only writes prose — story selection is the existing points-sort, not an LLM judgment call.
+- Output requested: one short paragraph (3-5 sentences) as plain text, no JSON/markdown wrapping required from the model, since there is nothing else to parse out of it.
+- Model: OpenRouter `inclusionai/ling-3.0-flash-sante:free` (primary). On any failure (rate limit, timeout, empty response), retry once against `nvidia/nemotron-3-super-120b-a12b:free` (fallback, different provider pool). If both fail, the function returns a "no recap available" response and caches nothing.
+- If fewer than 10 qualifying stories exist for the range, use however many are available; zero stories skips generation entirely (no LLM call, no cache write).
 
 ### 9.5 UI
 
-- `<DailyRecap />` (§5.2): callout after `<SortControls />`, visible only when `range === 'day'`.
+- `<Recap />` (§5.2): callout after `<SortControls />`, shown for every range.
 - Loading: skeleton/shimmer, non-blocking — `<StoryList />` renders independently.
 - Error/no-recap: renders nothing. A broken recap must never make the core app look broken.
-- Success: intro paragraph, then each story's blurb inline underneath, linking the same way `<StoryCard />` would (external URL if present, else `/item/:id`).
+- Success: the single summary paragraph, no per-story links.
 
 ## 10. Out of scope (v1)
 
 - User accounts, voting, submitting stories/comments (HN API is read-only anyway; no write access exists).
 - "Hot"/decayed-score sorting (possible v2 enhancement, see below).
 - Search by keyword (could reuse the same Algolia endpoint later with a `query` param).
-- Recaps for Week/Month/Year/All time windows — day-only for v1 (see T20 in the v2 backlog).
-- Browsing historical daily recaps — past recaps are retained in storage (§9.3) but no UI reads them yet.
+- Per-range regeneration cadence (weekly/monthly/yearly instead of daily for every range) — see T20.
+- Browsing historical recaps — past recaps are retained in storage (§9.3) but no UI reads them yet.
 
 ## 11. Possible v2 enhancements
 
@@ -266,8 +260,8 @@ A short AI-generated recap of the day's best stories, shown as a callout on the 
 - Add a decayed "hot" score option alongside pure point-sort, using an HN/Reddit-style formula: `score = points / (age_hours + 2)^gravity`.
 - Infinite scroll instead of pagination buttons.
 - Persist last-used sort/range in localStorage as the default landing state (URL param still takes precedence if present).
-- Extend AI recap generation to Week/Month/Year/All windows, each regenerated on its own cadence (T20).
-- Historical recap browsing UI, surfacing the archive of past daily recaps already retained in storage (§9.3).
+- Give Week/Month/Year/All recaps their own regeneration cadence instead of daily-for-every-range (T20).
+- Historical recap browsing UI, surfacing the archive of past recaps already retained in storage (§9.3).
 
 ## 12. Tickets — v1
 
@@ -396,41 +390,47 @@ After implementing a ticket, apply a check ✅ in the relative title.
 
 **Spec refs:** §9.2, §9.3
 
-### T11 — Recap generation logic
+### T11 — Recap generation logic ✅
 
-**Description:** Implement the full `recap` function per §9: compute the UTC date key, check the Blobs cache, on a miss fetch the top 10 day-range stories (reuse the Algolia query/sort logic from `src/api/hn.ts`), build the prompt, call OpenRouter (`inclusionai/ling-3.0-flash-sante:free` primary, `nvidia/nemotron-3-super-120b-a12b:free` fallback on error), parse the response into the §9.3 JSON shape, write it to Blobs, and return it. On total failure, return a "no recap" response without caching anything.
+**Description:** Implement the full `recap` function per §9: read `range` from the query string, compute the UTC date key, check the Blobs cache under `{range}:{date}`, on a miss fetch the top 10 stories for that range (reuse the Algolia query/sort logic from `src/api/hn.ts`), build the prompt, call OpenRouter (`inclusionai/ling-3.0-flash-sante:free` primary, `nvidia/nemotron-3-super-120b-a12b:free` fallback on error), take the model's plain-text paragraph as the summary, write it to Blobs, and return it. On total failure, return a "no recap" response without caching anything.
+
+Ships beyond the original v1 scope in two ways (superseding T20 and simplifying §9.3's original per-story-blurb shape):
+
+- `ponytail`: every range regenerates once per UTC day (same cadence as Day), rather than each range having its own cadence (weekly for Week, monthly for Month, etc. per T20's original description) — 5 ranges × 1 call/day is still comfortably inside the 50-request/day free-tier quota (§8). Upgrade to per-range cadence if that quota ever becomes a concern.
+- The LLM returns one overall paragraph instead of a per-story blurb list, so there's no JSON response to parse/validate — the model's raw text response is the summary. Simpler and one less way for the model's output to fail validation.
 
 **Acceptance criteria:**
 
 - A cache hit returns the stored blob without calling OpenRouter.
-- A cache miss calls OpenRouter, stores the result keyed by UTC date, and returns it.
-- A fewer-than-10-stories day still produces a recap using however many stories exist; a zero-story day returns "no recap" without calling the LLM.
+- A cache miss calls OpenRouter, stores the result keyed by `{range}:{date}`, and returns it.
+- Works for all five ranges, each cached independently.
+- A fewer-than-10-stories window still produces a recap using however many stories exist; a zero-story window returns "no recap" without calling the LLM.
 - Primary model failure triggers exactly one fallback-model retry before giving up.
 - `OPENROUTER_API_KEY` is read from a Netlify environment variable, never hardcoded.
 
 **Spec refs:** §9.2, §9.4, §8
 
-### T12 — `<DailyRecap />` component
+### T12 — `<Recap />` component ✅
 
-**Description:** Add `<DailyRecap />` to the home page, rendered after `<SortControls />` and visible only when `range === 'day'`. Fetches from the recap function via a `useRecap` hook, shows a loading skeleton while generation is in flight, renders the intro paragraph + per-story blurbs on success, and renders nothing on error or "no recap" (§9.5).
+**Description:** Add `<Recap range={range} />` to the home page, rendered after `<SortControls />` for every range (not Day-only, see T11). Fetches from the recap function via a `useRecap(range)` hook, shows a loading skeleton while generation is in flight, renders the single summary paragraph on success, and renders nothing on error or "no recap" (§9.5).
 
 **Acceptance criteria:**
 
-- Not rendered at all when `range` is `week`/`month`/`year`/`all`.
+- Rendered for every range, keyed on `[range]` so switching ranges fetches/caches independently.
 - Shows a skeleton while the request is in flight, without blocking `<StoryList />` from rendering.
 - Renders nothing (no error UI) if the function returns an error or a "no recap" response.
-- Each story blurb links to the same target `<StoryCard />` would use (external URL if present, else `/item/:id`).
 
 **Spec refs:** §9.5
 
-### T13 — Recap tests
+### T13 — Recap tests ✅
 
-**Description:** Vitest unit tests for the pure logic behind the recap function: UTC date-key computation, the Blobs cache-hit/cache-miss branch, and the fallback-model retry logic, all with mocked `fetch`/Blobs calls (consistent with the T8 pattern).
+**Description:** Vitest unit tests for the pure logic behind the recap function: UTC date-key computation, the Blobs cache-hit/cache-miss branch (including the `{range}:{date}` keying and range validation/fallback-to-day), and the fallback-model retry logic, all with mocked `fetch`/Blobs calls (consistent with the T8 pattern).
 
 **Acceptance criteria:**
 
 - UTC date-key computation is covered across a day boundary (e.g. 23:59 vs 00:01 UTC).
 - Cache-hit path is covered (mocked Blobs returns a value, OpenRouter is never called).
+- Cache-miss path is covered for a non-day range, asserting the `{range}:{date}` cache key and that `fetchStories` is called with that range.
 - Fallback-model retry is covered (primary call mocked to fail, fallback call mocked to succeed).
 
 **Spec refs:** §9.2, §9.4
@@ -475,8 +475,8 @@ Deferred per §10/§11; not scheduled for v1. Kept in the same ticket format so 
 
 **Spec refs:** §11
 
-### T20 — Week/Month/Year/All recaps
+### T20 — Per-range recap regeneration cadence
 
-**Description:** Extend the recap feature (§9) beyond Day: generate and cache an equivalent recap for Week/Month/Year/All, each on its own regeneration cadence (e.g. the week's recap regenerates once a week, the month's once a month, and so on), reusing the same Blobs-cache-then-generate flow and OpenRouter models as the daily recap.
+**Description:** T11 already extended recaps to Week/Month/Year/All, but every range regenerates once per UTC day (same cadence as Day, a deliberate `ponytail` simplification — see T11). This ticket gives each range its own cadence instead: the week's recap regenerates once a week, the month's once a month, and so on, cutting redundant OpenRouter calls if the 50-request/day quota (§8) ever becomes a real constraint.
 
 **Spec refs:** §9, §10, §11

@@ -1,15 +1,28 @@
-import { useNavigate, useLocation, Route, Routes, type Location } from "react-router";
+import {
+  useNavigate,
+  useLocation,
+  useSearchParams,
+  Route,
+  Routes,
+  type Location,
+} from "react-router";
 import { SortControls } from "@/components/SortControls";
 import { StoryList } from "@/components/StoryList";
 import { StoryDetail } from "@/components/StoryDetail";
+import { Recap } from "@/components/Recap";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import type { Range } from "@/api/hn";
 
 function Home() {
+  const [searchParams] = useSearchParams();
+  const range = (searchParams.get("range") ?? "day") as Range;
+
   return (
     <div className="mx-auto max-w-3xl p-4 2xl:max-w-5xl">
       <h1 className="text-2xl font-semibold">Hacker News Top</h1>
       <p className="mb-4 text-sm text-muted-foreground">Hacker News, sorted by what actually is interesting</p>
       <SortControls />
+      <Recap range={range} />
       <StoryList />
     </div>
   );
