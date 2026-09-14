@@ -6,11 +6,11 @@ const { getRecap, setRecap } = vi.hoisted(() => ({
 }));
 vi.mock("./recapStore.js", () => ({ getRecap, setRecap }));
 
-const { generateRecap, utcDateKey } = vi.hoisted(() => ({
+const { generateRecap, periodKey } = vi.hoisted(() => ({
   generateRecap: vi.fn(),
-  utcDateKey: vi.fn(() => "2026-09-13"),
+  periodKey: vi.fn(() => "2026-09-13"),
 }));
-vi.mock("./recap.js", () => ({ generateRecap, utcDateKey }));
+vi.mock("./recap.js", () => ({ generateRecap, periodKey }));
 
 const { fetchStories } = vi.hoisted(() => ({ fetchStories: vi.fn() }));
 vi.mock("../../src/api/hn.js", () => ({
@@ -30,7 +30,7 @@ function request(range?: string) {
 describe("recap function", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    utcDateKey.mockReturnValue("2026-09-13");
+    periodKey.mockReturnValue("2026-09-13");
   });
 
   it("returns the cached recap on a hit, without calling OpenRouter", async () => {

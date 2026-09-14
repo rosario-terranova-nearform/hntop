@@ -7,8 +7,9 @@ export function StoryList() {
   const [searchParams] = useSearchParams();
   const range = (searchParams.get("range") ?? "day") as Range;
   const page = Number(searchParams.get("page") ?? "0");
+  const query = searchParams.get("q") ?? "";
 
-  const { data, isPending, isError } = useStories(range, page);
+  const { data, isPending, isError } = useStories(range, page, query);
 
   if (isPending) {
     return (

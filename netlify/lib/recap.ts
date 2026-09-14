@@ -25,6 +25,33 @@ export function utcDateKey(date: Date = new Date()): string {
   return date.toISOString().slice(0, 10);
 }
 
+function isoWeekKey(date: Date): string {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7) + 3); // nearest Thursday
+  const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  firstThursday.setUTCDate(
+    firstThursday.getUTCDate() - ((firstThursday.getUTCDay() + 6) % 7) + 3,
+  );
+  const week = 1 + Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000));
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+}
+
+/** Cache key granularity matches the range: a "week" recap is stable for the ISO week, "all" never expires. */
+export function periodKey(range: Range, date: Date = new Date()): string {
+  switch (range) {
+    case "day":
+      return utcDateKey(date);
+    case "week":
+      return isoWeekKey(date);
+    case "month":
+      return date.toISOString().slice(0, 7);
+    case "year":
+      return date.toISOString().slice(0, 4);
+    case "all":
+      return "all";
+  }
+}
+
 function buildPrompt(stories: HNHit[], range: Range): string {
   const list = stories
     .map(

@@ -7,6 +7,7 @@ import {
   type Location,
 } from "react-router";
 import { SortControls } from "@/components/SortControls";
+import { SearchBox } from "@/components/SearchBox";
 import { StoryList } from "@/components/StoryList";
 import { StoryDetail } from "@/components/StoryDetail";
 import { Recap } from "@/components/Recap";
@@ -22,6 +23,7 @@ function Home() {
       <h1 className="text-2xl font-semibold">Hacker News Top</h1>
       <p className="mb-4 text-sm text-muted-foreground">Hacker News, sorted by what actually is interesting</p>
       <SortControls />
+      <SearchBox />
       <Recap range={range} />
       <StoryList />
     </div>

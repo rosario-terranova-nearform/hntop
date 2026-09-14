@@ -54,4 +54,16 @@ describe("fetchStories", () => {
     const result = await fetchStories("day", 0);
     expect(result.hits.map((h) => h.points)).toEqual([10, 50, 30]);
   });
+
+  it("omits the query param when no search term is given", async () => {
+    await fetchStories("day", 0);
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(url).not.toContain("query=");
+  });
+
+  it("sets the query param when a search term is given", async () => {
+    await fetchStories("day", 0, "rust");
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(url).toContain("query=rust");
+  });
 });

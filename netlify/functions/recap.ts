@@ -1,5 +1,5 @@
 import { getRecap, setRecap } from "../lib/recapStore.js";
-import { generateRecap, utcDateKey, type Recap } from "../lib/recap.js";
+import { generateRecap, periodKey, type Recap } from "../lib/recap.js";
 import { fetchStories, RANGE_SECONDS, type Range } from "../../src/api/hn.js";
 
 const VALID_RANGES = new Set<string>([...Object.keys(RANGE_SECONDS), "all"]);
@@ -11,7 +11,7 @@ function parseRange(url: string): Range {
 
 export default async (req: Request) => {
   const range = parseRange(req.url);
-  const date = utcDateKey();
+  const date = periodKey(range);
   const key = `${range}:${date}`;
 
   const cached = await getRecap(key);

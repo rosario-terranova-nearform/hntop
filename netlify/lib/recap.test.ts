@@ -1,11 +1,37 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { utcDateKey, generateRecap } from "./recap.js";
+import { utcDateKey, periodKey, generateRecap } from "./recap.js";
 import type { HNHit } from "../../src/api/hn.js";
 
 describe("utcDateKey", () => {
   it("returns the UTC date across a day boundary", () => {
     expect(utcDateKey(new Date("2026-09-13T23:59:00Z"))).toBe("2026-09-13");
     expect(utcDateKey(new Date("2026-09-14T00:01:00Z"))).toBe("2026-09-14");
+  });
+});
+
+describe("periodKey", () => {
+  const d = new Date("2026-09-14T12:00:00Z"); // a Monday
+
+  it("stays stable within each range's granularity", () => {
+    expect(periodKey("day", d)).toBe("2026-09-14");
+    expect(periodKey("week", d)).toBe("2026-W38");
+    expect(periodKey("month", d)).toBe("2026-09");
+    expect(periodKey("year", d)).toBe("2026");
+    expect(periodKey("all", d)).toBe("all");
+  });
+
+  it("advances week and month keys only when the calendar period changes", () => {
+    const sameWeekLaterInDay = new Date("2026-09-15T00:00:01Z");
+    expect(periodKey("week", sameWeekLaterInDay)).toBe(periodKey("week", d));
+
+    const nextMonth = new Date("2026-10-01T00:00:00Z");
+    expect(periodKey("month", nextMonth)).not.toBe(periodKey("month", d));
+  });
+
+  it("never changes for 'all', regardless of date", () => {
+    expect(periodKey("all", new Date("2020-01-01T00:00:00Z"))).toBe(
+      periodKey("all", new Date("2030-01-01T00:00:00Z")),
+    );
   });
 });
 

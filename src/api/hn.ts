@@ -45,6 +45,7 @@ const ALGOLIA_BASE = "https://hn.algolia.com/api/v1";
 export async function fetchStories(
   range: Range,
   page: number,
+  query = "",
 ): Promise<StoryListResult> {
   const params = new URLSearchParams({
     tags: "story",
@@ -55,6 +56,7 @@ export async function fetchStories(
     const lowerBound = Math.floor(Date.now() / 1000) - RANGE_SECONDS[range];
     params.set("numericFilters", `created_at_i>${lowerBound}`);
   }
+  if (query) params.set("query", query);
   const res = await fetch(`${ALGOLIA_BASE}/search?${params}`);
   if (!res.ok) throw new Error(`Algolia search failed: ${res.status}`);
   return (await res.json()) as StoryListResult;
@@ -69,10 +71,10 @@ export async function fetchItemWithComments(id: string): Promise<HNItem> {
 // Backoff instead of React Query's default 3 immediate retries (§8: Algolia rate limits).
 export const retryDelay = (attempt: number) => Math.min(1000 * 2 ** attempt, 10_000);
 
-export function useStories(range: Range, page: number) {
+export function useStories(range: Range, page: number, query = "") {
   return useQuery({
-    queryKey: ["stories", range, page],
-    queryFn: () => fetchStories(range, page),
+    queryKey: ["stories", range, page, query],
+    queryFn: () => fetchStories(range, page, query),
     staleTime: 60_000,
     retry: 2,
     retryDelay,

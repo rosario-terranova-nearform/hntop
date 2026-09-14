@@ -439,7 +439,7 @@ Ships beyond the original v1 scope in two ways (superseding T20 and simplifying 
 
 Deferred per §10/§11; not scheduled for v1. Kept in the same ticket format so they're ready to pick up without re-deriving from the spec.
 
-### T14 — Keyword search
+### T14 — Keyword search ✅
 
 **Description:** Add a search box using the Algolia `search` endpoint's `query` param, reusing the existing fetching/pagination layer.
 
