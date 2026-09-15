@@ -445,19 +445,19 @@ Deferred per §10/§11; not scheduled for v1. Kept in the same ticket format so 
 
 **Spec refs:** §10, §11
 
-### T15 — "Hot" decayed-score sort
+### T15 — "Hot" decayed-score sort ✅
 
 **Description:** Add a sort mode alongside pure point-sort using `score = points / (age_hours + 2)^gravity`.
 
 **Spec refs:** §10, §11
 
-### T16 — Infinite scroll
+### T16 — Infinite scroll ✅
 
 **Description:** Replace Prev/Next pagination with infinite scroll (append pages as the user scrolls).
 
 **Spec refs:** §11
 
-### T17 — Persist last-used range in localStorage
+### T17 — Persist last-used range in localStorage ✅
 
 **Description:** Default the landing state to the last-used sort/range from localStorage; explicit URL params still take precedence.
 

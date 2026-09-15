@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { RANGE_SECONDS, fetchStories } from "./hn";
+import { RANGE_SECONDS, fetchStories, hotScore } from "./hn";
 
 describe("RANGE_SECONDS", () => {
   it("covers day/week/month/year", () => {
@@ -7,6 +7,22 @@ describe("RANGE_SECONDS", () => {
     expect(RANGE_SECONDS.week).toBe(7 * 24 * 60 * 60);
     expect(RANGE_SECONDS.month).toBe(30 * 24 * 60 * 60);
     expect(RANGE_SECONDS.year).toBe(365 * 24 * 60 * 60);
+  });
+});
+
+describe("hotScore", () => {
+  it("ranks a fresh, lower-point story above an old, higher-point one", () => {
+    const now = Date.now();
+    const fresh = hotScore(20, Math.floor(now / 1000) - 3600, now);
+    const old = hotScore(100, Math.floor(now / 1000) - 48 * 3600, now);
+    expect(fresh).toBeGreaterThan(old);
+  });
+
+  it("decreases as a story ages, all else equal", () => {
+    const now = Date.now();
+    const at1h = hotScore(50, Math.floor(now / 1000) - 3600, now);
+    const at10h = hotScore(50, Math.floor(now / 1000) - 10 * 3600, now);
+    expect(at1h).toBeGreaterThan(at10h);
   });
 });
 

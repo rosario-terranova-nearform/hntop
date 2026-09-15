@@ -12,7 +12,6 @@ export function SearchBox() {
     const next = new URLSearchParams(searchParams);
     if (value) next.set("q", value);
     else next.delete("q");
-    next.set("page", "0");
     setSearchParams(next);
   }
 

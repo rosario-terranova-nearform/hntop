@@ -23,25 +23,23 @@ describe("SearchBox", () => {
     expect(screen.getByRole("searchbox")).toHaveValue("rust");
   });
 
-  it("sets q and resets page to 0 on submit", () => {
-    renderAt("/?range=week&page=2");
+  it("sets q on submit", () => {
+    renderAt("/?range=week");
     fireEvent.change(screen.getByRole("searchbox"), {
       target: { value: "rust" },
     });
     fireEvent.submit(screen.getByRole("search"));
     expect(screen.getByTestId("location").textContent).toBe(
-      "?range=week&page=0&q=rust",
+      "?range=week&q=rust",
     );
   });
 
   it("removes q on submit with an empty search term", () => {
-    renderAt("/?range=week&page=2&q=rust");
+    renderAt("/?range=week&q=rust");
     fireEvent.change(screen.getByRole("searchbox"), {
       target: { value: "" },
     });
     fireEvent.submit(screen.getByRole("search"));
-    expect(screen.getByTestId("location").textContent).toBe(
-      "?range=week&page=0",
-    );
+    expect(screen.getByTestId("location").textContent).toBe("?range=week");
   });
 });

@@ -1,6 +1,7 @@
 import { useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
-import type { Range } from "@/api/hn";
+import type { Range, Sort } from "@/api/hn";
+import { getStoredRange, getStoredSort, setStoredRange, setStoredSort } from "@/lib/preferences";
 
 const RANGES: { value: Range; label: string }[] = [
   { value: "day", label: "Day" },
@@ -10,23 +11,52 @@ const RANGES: { value: Range; label: string }[] = [
   { value: "all", label: "All" },
 ];
 
+const SORTS: { value: Sort; label: string }[] = [
+  { value: "top", label: "Top" },
+  { value: "hot", label: "Hot" },
+];
+
 export function SortControls() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const range = searchParams.get("range") ?? "day";
+  const range = searchParams.get("range") ?? getStoredRange();
+  const sort = searchParams.get("sort") ?? getStoredSort();
 
   return (
-    <div role="group" aria-label="Sort by time range" className="flex gap-1">
-      {RANGES.map(({ value, label }) => (
-        <Button
-          key={value}
-          type="button"
-          variant={value === range ? "default" : "outline"}
-          aria-pressed={value === range}
-          onClick={() => setSearchParams({ range: value, page: "0" })}
-        >
-          {label}
-        </Button>
-      ))}
+    <div className="flex flex-wrap items-center gap-2">
+      <div role="group" aria-label="Sort by time range" className="flex gap-1">
+        {RANGES.map(({ value, label }) => (
+          <Button
+            key={value}
+            type="button"
+            variant={value === range ? "default" : "outline"}
+            aria-pressed={value === range}
+            onClick={() => {
+              setStoredRange(value);
+              setSearchParams({ range: value });
+            }}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
+      <div role="group" aria-label="Sort by score" className="flex gap-1">
+        {SORTS.map(({ value, label }) => (
+          <Button
+            key={value}
+            type="button"
+            variant={value === sort ? "default" : "outline"}
+            aria-pressed={value === sort}
+            onClick={() => {
+              setStoredSort(value);
+              const next = new URLSearchParams(searchParams);
+              next.set("sort", value);
+              setSearchParams(next);
+            }}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }

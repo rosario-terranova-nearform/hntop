@@ -1,15 +1,29 @@
+import { useEffect, useRef } from "react";
 import { useSearchParams } from "react-router";
-import { useStories, type Range } from "@/api/hn";
+import { hotScore, useInfiniteStories, type Range, type Sort } from "@/api/hn";
 import { StoryCard } from "@/components/StoryCard";
-import { Pagination } from "@/components/Pagination";
+import { getStoredRange, getStoredSort } from "@/lib/preferences";
 
 export function StoryList() {
   const [searchParams] = useSearchParams();
-  const range = (searchParams.get("range") ?? "day") as Range;
-  const page = Number(searchParams.get("page") ?? "0");
+  const range = (searchParams.get("range") ?? getStoredRange()) as Range;
   const query = searchParams.get("q") ?? "";
+  const sort = (searchParams.get("sort") ?? getStoredSort()) as Sort;
 
-  const { data, isPending, isError } = useStories(range, page, query);
+  const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteStories(range, query);
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasNextPage) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) fetchNextPage();
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, fetchNextPage]);
 
   if (isPending) {
     return (
@@ -25,7 +39,9 @@ export function StoryList() {
     );
   }
 
-  if (data.hits.length === 0) {
+  const hits = data.pages.flatMap((p) => p.hits);
+
+  if (hits.length === 0) {
     return (
       <div className="py-8 text-center text-muted-foreground">
         No stories found for this range. Try a wider time window.
@@ -33,12 +49,25 @@ export function StoryList() {
     );
   }
 
+  const sorted =
+    sort === "hot"
+      ? [...hits].sort(
+          (a, b) =>
+            hotScore(b.points, b.created_at_i) - hotScore(a.points, a.created_at_i),
+        )
+      : hits;
+
   return (
     <div>
-      {data.hits.map((hit, i) => (
-        <StoryCard key={hit.objectID} hit={hit} rank={page * 30 + i + 1} />
+      {sorted.map((hit, i) => (
+        <StoryCard key={hit.objectID} hit={hit} rank={i + 1} />
       ))}
-      <Pagination page={data.page} nbPages={data.nbPages} />
+      <div ref={sentinelRef} />
+      {isFetchingNextPage && (
+        <div className="py-4 text-center text-muted-foreground">
+          Loading more…
+        </div>
+      )}
     </div>
   );
 }

@@ -13,10 +13,11 @@ import { StoryDetail } from "@/components/StoryDetail";
 import { Recap } from "@/components/Recap";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { Range } from "@/api/hn";
+import { getStoredRange } from "@/lib/preferences";
 
 function Home() {
   const [searchParams] = useSearchParams();
-  const range = (searchParams.get("range") ?? "day") as Range;
+  const range = (searchParams.get("range") ?? getStoredRange()) as Range;
 
   return (
     <div className="mx-auto max-w-3xl p-4 2xl:max-w-5xl">
