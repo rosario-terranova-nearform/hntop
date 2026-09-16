@@ -39,12 +39,18 @@ export function SortControls() {
           </Button>
         ))}
       </div>
+      <div className="h-6 w-px bg-border" aria-hidden="true" />
       <div role="group" aria-label="Sort by score" className="flex gap-1">
         {SORTS.map(({ value, label }) => (
           <Button
             key={value}
             type="button"
-            variant={value === sort ? "default" : "outline"}
+            variant="outline"
+            className={
+              value === sort
+                ? "border-blue-500 bg-blue-500 text-white hover:bg-blue-600 hover:text-white dark:border-blue-400 dark:bg-blue-400 dark:text-black dark:hover:bg-blue-300"
+                : "border-blue-500 dark:border-blue-400"
+            }
             aria-pressed={value === sort}
             onClick={() => {
               setStoredSort(value);

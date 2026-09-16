@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "react-router";
-import { hotScore, useInfiniteStories, type Range, type Sort } from "@/api/hn";
+import { dateStringToUnix, hotScore, useInfiniteStories, type Range, type Sort } from "@/api/hn";
 import { StoryCard } from "@/components/StoryCard";
 import { getStoredRange, getStoredSort } from "@/lib/preferences";
 
@@ -9,9 +9,17 @@ export function StoryList() {
   const range = (searchParams.get("range") ?? getStoredRange()) as Range;
   const query = searchParams.get("q") ?? "";
   const sort = (searchParams.get("sort") ?? getStoredSort()) as Sort;
+  const fromParam = searchParams.get("from");
+  const toParam = searchParams.get("to");
+  const dateBounds = fromParam || toParam
+    ? {
+        from: fromParam ? dateStringToUnix(fromParam) : undefined,
+        to: toParam ? dateStringToUnix(toParam, true) : undefined,
+      }
+    : undefined;
 
   const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteStories(range, query);
+    useInfiniteStories(range, query, dateBounds);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 

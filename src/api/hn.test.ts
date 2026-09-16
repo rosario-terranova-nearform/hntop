@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { RANGE_SECONDS, fetchStories, hotScore } from "./hn";
+import { RANGE_SECONDS, dateStringToUnix, fetchStories, hotScore } from "./hn";
 
 describe("RANGE_SECONDS", () => {
   it("covers day/week/month/year", () => {
@@ -81,5 +81,31 @@ describe("fetchStories", () => {
     await fetchStories("day", 0, "rust");
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
     expect(url).toContain("query=rust");
+  });
+
+  it("uses explicit date bounds instead of the range bucket when given", async () => {
+    await fetchStories("day", 0, "", { from: 100, to: 200 });
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(url).toMatch(/numericFilters=created_at_i%3E100%2Ccreated_at_i%3C200/);
+  });
+
+  it("supports an open-ended date bound", async () => {
+    await fetchStories("day", 0, "", { from: 100 });
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(url).toMatch(/numericFilters=created_at_i%3E100$/);
+  });
+});
+
+describe("dateStringToUnix", () => {
+  it("anchors to UTC start of day by default", () => {
+    expect(dateStringToUnix("2026-09-14")).toBe(
+      Date.UTC(2026, 8, 14, 0, 0, 0) / 1000,
+    );
+  });
+
+  it("anchors to UTC end of day when requested", () => {
+    expect(dateStringToUnix("2026-09-14", true)).toBe(
+      Date.UTC(2026, 8, 14, 23, 59, 59) / 1000,
+    );
   });
 });

@@ -43,17 +43,35 @@ export interface HNItem {
 
 const ALGOLIA_BASE = "https://hn.algolia.com/api/v1";
 
+export interface DateBounds {
+  from?: number;
+  to?: number;
+}
+
+// Native <input type="date"> gives "YYYY-MM-DD"; anchor to UTC start/end of that day.
+export function dateStringToUnix(dateStr: string, endOfDay = false): number {
+  return Math.floor(
+    new Date(`${dateStr}T${endOfDay ? "23:59:59" : "00:00:00"}Z`).getTime() / 1000,
+  );
+}
+
 export async function fetchStories(
   range: Range,
   page: number,
   query = "",
+  dateBounds?: DateBounds,
 ): Promise<StoryListResult> {
   const params = new URLSearchParams({
     tags: "story",
     page: String(page),
     hitsPerPage: "30",
   });
-  if (range !== "all") {
+  if (dateBounds?.from != null || dateBounds?.to != null) {
+    const filters: string[] = [];
+    if (dateBounds.from != null) filters.push(`created_at_i>${dateBounds.from}`);
+    if (dateBounds.to != null) filters.push(`created_at_i<${dateBounds.to}`);
+    params.set("numericFilters", filters.join(","));
+  } else if (range !== "all") {
     const lowerBound = Math.floor(Date.now() / 1000) - RANGE_SECONDS[range];
     params.set("numericFilters", `created_at_i>${lowerBound}`);
   }
@@ -80,10 +98,10 @@ export async function fetchItemWithComments(id: string): Promise<HNItem> {
 // Backoff instead of React Query's default 3 immediate retries (§8: Algolia rate limits).
 export const retryDelay = (attempt: number) => Math.min(1000 * 2 ** attempt, 10_000);
 
-export function useInfiniteStories(range: Range, query = "") {
+export function useInfiniteStories(range: Range, query = "", dateBounds?: DateBounds) {
   return useInfiniteQuery({
-    queryKey: ["stories", range, query],
-    queryFn: ({ pageParam }) => fetchStories(range, pageParam, query),
+    queryKey: ["stories", range, query, dateBounds?.from, dateBounds?.to],
+    queryFn: ({ pageParam }) => fetchStories(range, pageParam, query, dateBounds),
     initialPageParam: 0,
     getNextPageParam: (lastPage) =>
       lastPage.page + 1 < lastPage.nbPages ? lastPage.page + 1 : undefined,

@@ -21,3 +21,16 @@ export const getStoredRange = () => getStored<Range>("hntop:range", "day");
 export const setStoredRange = (range: Range) => setStored("hntop:range", range);
 export const getStoredSort = () => getStored<Sort>("hntop:sort", "top");
 export const setStoredSort = (sort: Sort) => setStored("hntop:sort", sort);
+
+export type Theme = "light" | "dark";
+
+// null = no explicit choice yet, follow the browser's prefers-color-scheme (see lib/theme.ts).
+export function getStoredTheme(): Theme | null {
+  try {
+    const value = localStorage.getItem("hntop:theme");
+    return value === "light" || value === "dark" ? value : null;
+  } catch {
+    return null;
+  }
+}
+export const setStoredTheme = (theme: Theme) => setStored("hntop:theme", theme);

@@ -463,19 +463,19 @@ Deferred per §10/§11; not scheduled for v1. Kept in the same ticket format so 
 
 **Spec refs:** §11
 
-### T18 — Custom date range picker
+### T18 — Custom date range picker ✅
 
 **Description:** Add a calendar control letting the user pick a specific day or a custom date range instead of the fixed Day/Week/Month/Year/All buckets. Selected date(s) drive the same `numericFilters` lower/upper bound logic as §3, exposed via new URL params (e.g. `from`/`to`) alongside `range`.
 
 **Spec refs:** §3, §4, §11
 
-### T19 — Hackier header graphic with dark/light theme support
+### T19 — Hackier header graphic with dark/light theme support ✅
 
 **Description:** Replace the plain "HN Top" text header with a more hacker-styled graphic/logo (e.g. terminal/glitch aesthetic), rendered correctly in both dark and light themes.
 
 **Spec refs:** §11
 
-### T20 — Per-range recap regeneration cadence
+### T20 — Per-range recap regeneration cadence ✅ (already shipped in T11's `periodKey`, see `netlify/lib/recap.ts`)
 
 **Description:** T11 already extended recaps to Week/Month/Year/All, but every range regenerates once per UTC day (same cadence as Day, a deliberate `ponytail` simplification — see T11). This ticket gives each range its own cadence instead: the week's recap regenerates once a week, the month's once a month, and so on, cutting redundant OpenRouter calls if the 50-request/day quota (§8) ever becomes a real constraint.
 
