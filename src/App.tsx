@@ -72,7 +72,7 @@ function Home() {
       <p className="mb-4 text-sm text-muted-foreground">
         Hacker News, sorted by what actually is interesting
       </p>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="my-4 flex flex-wrap items-center gap-2">
         <SortControls />
       </div>
       <SearchBox />

@@ -29,38 +29,55 @@ export function SortControls() {
   const sort = searchParams.get('sort') ?? getStoredSort()
   const isCustomRange = searchParams.has('from') || searchParams.has('to')
 
+  const changeRange = (value: Range) => {
+    setStoredRange(value)
+    const next = new URLSearchParams(searchParams)
+    next.set('range', value)
+    next.delete('from')
+    next.delete('to')
+    setSearchParams(next)
+  }
+
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div
-        role="group"
-        aria-label="Sort by time range"
-        className="flex flex-wrap gap-1"
-      >
-        {RANGES.map(({ value, label }) => (
-          <Button
-            key={value}
-            type="button"
-            variant={value === range && !isCustomRange ? 'default' : 'outline'}
-            aria-pressed={value === range && !isCustomRange}
-            onClick={() => {
-              setStoredRange(value)
-              const next = new URLSearchParams(searchParams)
-              next.set('range', value)
-              next.delete('from')
-              next.delete('to')
-              setSearchParams(next)
-            }}
-          >
-            {label}
-          </Button>
-        ))}
+    <div className="flex w-full flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1">
+        <select
+          aria-label="Sort by time range"
+          className="rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground sm:hidden dark:border-transparent dark:bg-primary dark:text-primary-foreground dark:[color-scheme:light]"
+          value={isCustomRange ? '' : range}
+          onChange={(e) => changeRange(e.target.value as Range)}
+        >
+          {isCustomRange && <option value="">Custom</option>}
+          {RANGES.map(({ value, label }) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <div
+          role="group"
+          aria-label="Sort by time range"
+          className="hidden flex-wrap gap-1 sm:flex"
+        >
+          {RANGES.map(({ value, label }) => (
+            <Button
+              key={value}
+              type="button"
+              variant={value === range && !isCustomRange ? 'default' : 'outline'}
+              aria-pressed={value === range && !isCustomRange}
+              onClick={() => changeRange(value)}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
         <DateRangePicker />
       </div>
       <div
-        className="hidden h-6 w-px bg-border sm:block"
-        aria-hidden="true"
-      />
-      <div role="group" aria-label="Sort by score" className="flex gap-1">
+        role="group"
+        aria-label="Sort by score"
+        className="flex gap-1 min-[384px]:ml-auto"
+      >
         {SORTS.map(({ value, label }) => (
           <Button
             key={value}

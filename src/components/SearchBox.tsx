@@ -15,12 +15,22 @@ export function SearchBox() {
     setSearchParams(next);
   }
 
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const next = e.target.value;
+    setValue(next);
+    if (!next && searchParams.has("q")) {
+      const params = new URLSearchParams(searchParams);
+      params.delete("q");
+      setSearchParams(params);
+    }
+  }
+
   return (
-    <form onSubmit={handleSubmit} role="search" className="my-2 flex gap-2">
+    <form onSubmit={handleSubmit} role="search" className="my-4 flex gap-2">
       <input
         type="search"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={handleChange}
         placeholder="Search stories…"
         aria-label="Search stories"
         className="h-8 w-full min-w-0 rounded-md border border-border bg-background px-3 text-sm"
