@@ -1,25 +1,31 @@
-import { useSearchParams } from "react-router";
-import { Button } from "@/components/ui/button";
-import type { Range, Sort } from "@/api/hn";
-import { getStoredRange, getStoredSort, setStoredRange, setStoredSort } from "@/lib/preferences";
+import { useSearchParams } from 'react-router'
+import { Button } from '@/components/ui/button'
+import type { Range, Sort } from '@/api/hn'
+import {
+  getStoredRange,
+  getStoredSort,
+  setStoredRange,
+  setStoredSort,
+} from '@/lib/preferences'
+import { DateRangePicker } from './DateRangePicker'
 
 const RANGES: { value: Range; label: string }[] = [
-  { value: "day", label: "Day" },
-  { value: "week", label: "Week" },
-  { value: "month", label: "Month" },
-  { value: "year", label: "Year" },
-  { value: "all", label: "All" },
-];
+  { value: 'day', label: 'Day' },
+  { value: 'week', label: 'Week' },
+  { value: 'month', label: 'Month' },
+  { value: 'year', label: 'Year' },
+  { value: 'all', label: 'All' },
+]
 
 const SORTS: { value: Sort; label: string }[] = [
-  { value: "top", label: "Top" },
-  { value: "hot", label: "Hot" },
-];
+  { value: 'top', label: 'Top' },
+  { value: 'hot', label: 'Hot' },
+]
 
 export function SortControls() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const range = searchParams.get("range") ?? getStoredRange();
-  const sort = searchParams.get("sort") ?? getStoredSort();
+  const [searchParams, setSearchParams] = useSearchParams()
+  const range = searchParams.get('range') ?? getStoredRange()
+  const sort = searchParams.get('sort') ?? getStoredSort()
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -28,11 +34,11 @@ export function SortControls() {
           <Button
             key={value}
             type="button"
-            variant={value === range ? "default" : "outline"}
+            variant={value === range ? 'default' : 'outline'}
             aria-pressed={value === range}
             onClick={() => {
-              setStoredRange(value);
-              setSearchParams({ range: value });
+              setStoredRange(value)
+              setSearchParams({ range: value })
             }}
           >
             {label}
@@ -48,21 +54,22 @@ export function SortControls() {
             variant="outline"
             className={
               value === sort
-                ? "border-blue-500 bg-blue-500 text-white hover:bg-blue-600 hover:text-white dark:border-blue-400 dark:bg-blue-400 dark:text-black dark:hover:bg-blue-300"
-                : "border-blue-500 dark:border-blue-400"
+                ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600 hover:text-white dark:border-blue-400 dark:bg-blue-400 dark:text-black dark:hover:bg-blue-300'
+                : 'border-blue-500 dark:border-blue-400'
             }
             aria-pressed={value === sort}
             onClick={() => {
-              setStoredSort(value);
-              const next = new URLSearchParams(searchParams);
-              next.set("sort", value);
-              setSearchParams(next);
+              setStoredSort(value)
+              const next = new URLSearchParams(searchParams)
+              next.set('sort', value)
+              setSearchParams(next)
             }}
           >
             {label}
           </Button>
         ))}
       </div>
+      <DateRangePicker />
     </div>
-  );
+  )
 }

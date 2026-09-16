@@ -75,7 +75,6 @@ function Home() {
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <SortControls />
-        <DateRangePicker />
       </div>
       <SearchBox />
       {!isCustomRange && <Recap range={range} />}
