@@ -1,32 +1,37 @@
-# React + TypeScript + Vite
+# hntop
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A Hacker News top stories client built with React, TypeScript, and Vite.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Infinite-scrolling story list, sortable by top/new/hot score
+- Search stories and filter by date range
+- Story detail view with threaded comments
+- AI-generated recaps of story discussions (via a Netlify function calling OpenRouter), with caching in Netlify Blobs
+- Light/dark theme toggle
 
-## React Compiler
+## Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React 19 + React Router, styled with Tailwind CSS and Radix UI primitives
+- TanStack Query for data fetching
+- Netlify Functions for the recap API, deployed alongside the static site
+- Vitest + Testing Library for tests
 
-## Expanding the Oxlint configuration
+## Getting started
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+pnpm install
+pnpm dev          # Vite dev server only
+pnpm dev:netlify  # Vite + Netlify functions (needed for the recap feature)
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+The recap function requires an `OPENROUTER_API_KEY` environment variable.
+
+## Scripts
+
+- `pnpm dev` – start the Vite dev server
+- `pnpm dev:netlify` – start Vite with Netlify Functions via `netlify dev`
+- `pnpm build` – typecheck (`tsc -b`) and build for production
+- `pnpm test` – run the test suite with Vitest
+- `pnpm lint` – lint with ESLint
+- `pnpm format` – format with Prettier
