@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "fallow": {
+      "source": "fallow-rs/fallow-skills",
+      "sourceType": "github",
+      "skillPath": "fallow/skills/fallow/SKILL.md",
+      "computedHash": "6db8d7a7712143c8a26b076ca6566c84be0074afe4ccb34e9d28d97f173cc6c4"
+    },
     "grilling": {
       "source": "mattpocock/skills",
       "sourceType": "github",

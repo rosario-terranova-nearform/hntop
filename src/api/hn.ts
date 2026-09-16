@@ -89,7 +89,7 @@ export function hotScore(points: number, createdAtI: number, now = Date.now()): 
   return points / Math.pow(ageHours + 2, HOT_GRAVITY);
 }
 
-export async function fetchItemWithComments(id: string): Promise<HNItem> {
+async function fetchItemWithComments(id: string): Promise<HNItem> {
   const res = await fetch(`${ALGOLIA_BASE}/items/${id}`);
   if (!res.ok) throw new Error(`Algolia item fetch failed: ${res.status}`);
   return (await res.json()) as HNItem;

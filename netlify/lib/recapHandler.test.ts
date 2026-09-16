@@ -4,7 +4,9 @@ const { getRecap, setRecap } = vi.hoisted(() => ({
   getRecap: vi.fn(),
   setRecap: vi.fn(),
 }));
-vi.mock("./recapStore.js", () => ({ getRecap, setRecap }));
+vi.mock("@netlify/blobs", () => ({
+  getStore: () => ({ get: getRecap, setJSON: setRecap }),
+}));
 
 const { generateRecap, periodKey } = vi.hoisted(() => ({
   generateRecap: vi.fn(),
@@ -40,7 +42,7 @@ describe("recap function", () => {
     const res = await handler(request("day"));
 
     expect(await res.json()).toEqual(cached);
-    expect(getRecap).toHaveBeenCalledWith("day:2026-09-13");
+    expect(getRecap).toHaveBeenCalledWith("day:2026-09-13", { type: "json" });
     expect(fetchStories).not.toHaveBeenCalled();
     expect(generateRecap).not.toHaveBeenCalled();
     expect(setRecap).not.toHaveBeenCalled();

@@ -9,6 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { ACTIVE_FILTER_CLASSES } from '@/lib/utils'
 
 function parseDateStr(value: string): Date {
   const [y, m, d] = value.split('-').map(Number)
@@ -68,7 +69,7 @@ export function DateRangePicker() {
             variant="outline"
             className={
               from || to
-                ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600 hover:text-white dark:border-blue-400 dark:bg-blue-400 dark:text-black dark:hover:bg-blue-300'
+                ? ACTIVE_FILTER_CLASSES
                 : 'border-blue-500 dark:border-blue-400'
             }
           >

@@ -1,4 +1,4 @@
-import { getRecap, setRecap } from "../lib/recapStore.js";
+import { getStore } from "@netlify/blobs";
 import { generateRecap, periodKey, type Recap } from "../lib/recap.js";
 import { fetchStories, RANGE_SECONDS, type Range } from "../../src/api/hn.js";
 
@@ -13,8 +13,9 @@ export default async (req: Request) => {
   const range = parseRange(req.url);
   const date = periodKey(range);
   const key = `${range}:${date}`;
+  const store = getStore("recaps");
 
-  const cached = await getRecap(key);
+  const cached = await store.get(key, { type: "json" });
   if (cached) return Response.json(cached);
 
   const { hits } = await fetchStories(range, 0);
@@ -22,6 +23,6 @@ export default async (req: Request) => {
   if (!content) return Response.json(null);
 
   const recap: Recap = { date, range, ...content };
-  await setRecap(key, recap);
+  await store.setJSON(key, recap);
   return Response.json(recap);
 };

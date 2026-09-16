@@ -7,6 +7,7 @@ import {
   setStoredRange,
   setStoredSort,
 } from '@/lib/preferences'
+import { ACTIVE_FILTER_CLASSES } from '@/lib/utils'
 import { DateRangePicker } from './DateRangePicker'
 
 const RANGES: { value: Range; label: string }[] = [
@@ -54,7 +55,7 @@ export function SortControls() {
             variant="outline"
             className={
               value === sort
-                ? 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600 hover:text-white dark:border-blue-400 dark:bg-blue-400 dark:text-black dark:hover:bg-blue-300'
+                ? ACTIVE_FILTER_CLASSES
                 : 'border-blue-500 dark:border-blue-400'
             }
             aria-pressed={value === sort}
