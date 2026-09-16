@@ -9,7 +9,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { ACTIVE_FILTER_CLASSES } from '@/lib/utils'
 
 function parseDateStr(value: string): Date {
   const [y, m, d] = value.split('-').map(Number)
@@ -58,20 +57,18 @@ export function DateRangePicker() {
         ? `From ${LABEL_FORMAT.format(parseDateStr(from))}`
         : to
           ? `Until ${LABEL_FORMAT.format(parseDateStr(to))}`
-          : 'Custom range'
+          : 'Range'
+
+  const isActive = Boolean(from || to)
 
   return (
-    <div>
+    <div className="flex">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             type="button"
-            variant="outline"
-            className={
-              from || to
-                ? ACTIVE_FILTER_CLASSES
-                : 'border-blue-500 dark:border-blue-400'
-            }
+            variant={isActive ? 'default' : 'outline'}
+            aria-pressed={isActive}
           >
             <CalendarIcon /> {label}
           </Button>
@@ -82,6 +79,7 @@ export function DateRangePicker() {
             selected={selected}
             defaultMonth={selected?.from}
             onSelect={apply}
+            disabled={{ after: new Date() }}
           />
         </PopoverContent>
       </Popover>

@@ -27,26 +27,39 @@ export function SortControls() {
   const [searchParams, setSearchParams] = useSearchParams()
   const range = searchParams.get('range') ?? getStoredRange()
   const sort = searchParams.get('sort') ?? getStoredSort()
+  const isCustomRange = searchParams.has('from') || searchParams.has('to')
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div role="group" aria-label="Sort by time range" className="flex gap-1">
+      <div
+        role="group"
+        aria-label="Sort by time range"
+        className="flex flex-wrap gap-1"
+      >
         {RANGES.map(({ value, label }) => (
           <Button
             key={value}
             type="button"
-            variant={value === range ? 'default' : 'outline'}
-            aria-pressed={value === range}
+            variant={value === range && !isCustomRange ? 'default' : 'outline'}
+            aria-pressed={value === range && !isCustomRange}
             onClick={() => {
               setStoredRange(value)
-              setSearchParams({ range: value })
+              const next = new URLSearchParams(searchParams)
+              next.set('range', value)
+              next.delete('from')
+              next.delete('to')
+              setSearchParams(next)
             }}
           >
             {label}
           </Button>
         ))}
+        <DateRangePicker />
       </div>
-      <div className="h-6 w-px bg-border" aria-hidden="true" />
+      <div
+        className="hidden h-6 w-px bg-border sm:block"
+        aria-hidden="true"
+      />
       <div role="group" aria-label="Sort by score" className="flex gap-1">
         {SORTS.map(({ value, label }) => (
           <Button
@@ -70,7 +83,6 @@ export function SortControls() {
           </Button>
         ))}
       </div>
-      <DateRangePicker />
     </div>
   )
 }
