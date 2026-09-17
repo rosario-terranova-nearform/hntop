@@ -44,27 +44,10 @@ describe("SortControls", () => {
     expect(screen.getByTestId("location").textContent).toBe("?range=month");
   });
 
-  it("defaults to top sort and toggles to hot without losing the range", () => {
-    renderAt("/?range=week");
-    expect(screen.getByRole("button", { name: "Top" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Hot" }));
-    expect(screen.getByTestId("location").textContent).toBe(
-      "?range=week&sort=hot",
-    );
-  });
-
-  it("lands on the last-used range/sort from localStorage when the URL has none", () => {
+  it("lands on the last-used range from localStorage when the URL has none", () => {
     localStorage.setItem("hntop:range", "year");
-    localStorage.setItem("hntop:sort", "hot");
     renderAt("/");
     expect(screen.getByRole("button", { name: "Year" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    expect(screen.getByRole("button", { name: "Hot" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -79,11 +62,9 @@ describe("SortControls", () => {
     );
   });
 
-  it("remembers range and sort clicks for next time", () => {
+  it("remembers range clicks for next time", () => {
     renderAt("/?range=week");
     fireEvent.click(screen.getByRole("button", { name: "Month" }));
-    fireEvent.click(screen.getByRole("button", { name: "Hot" }));
     expect(localStorage.getItem("hntop:range")).toBe("month");
-    expect(localStorage.getItem("hntop:sort")).toBe("hot");
   });
 });

@@ -28,10 +28,6 @@ export function domainFromUrl(url: string | null): string | null {
   }
 }
 
-// Active-state styling shared by the SortControls sort toggle and DateRangePicker trigger.
-export const ACTIVE_FILTER_CLASSES =
-  "border-blue-500 bg-blue-500 text-white hover:bg-blue-600 hover:text-white dark:border-blue-400 dark:bg-blue-400 dark:text-black dark:hover:bg-blue-300"
-
 // Shared "[deleted]"/"[dead]" placeholder for StoryCard/StoryDetail/CommentThread (§8).
 export function deletedLabel(entity: {
   author: string | null

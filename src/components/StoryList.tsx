@@ -1,14 +1,13 @@
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "react-router";
-import { dateStringToUnix, hotScore, useInfiniteStories, type Range, type Sort } from "@/api/hn";
+import { dateStringToUnix, useInfiniteStories, type Range } from "@/api/hn";
 import { StoryCard } from "@/components/StoryCard";
-import { getStoredRange, getStoredSort } from "@/lib/preferences";
+import { getStoredRange } from "@/lib/preferences";
 
 export function StoryList() {
   const [searchParams] = useSearchParams();
   const range = (searchParams.get("range") ?? getStoredRange()) as Range;
   const query = searchParams.get("q") ?? "";
-  const sort = (searchParams.get("sort") ?? getStoredSort()) as Sort;
   const fromParam = searchParams.get("from");
   const toParam = searchParams.get("to");
   const dateBounds = fromParam || toParam
@@ -57,17 +56,9 @@ export function StoryList() {
     );
   }
 
-  const sorted =
-    sort === "hot"
-      ? [...hits].sort(
-          (a, b) =>
-            hotScore(b.points, b.created_at_i) - hotScore(a.points, a.created_at_i),
-        )
-      : hits;
-
   return (
     <div>
-      {sorted.map((hit, i) => (
+      {hits.map((hit, i) => (
         <StoryCard key={hit.objectID} hit={hit} rank={i + 1} />
       ))}
       <div ref={sentinelRef} />

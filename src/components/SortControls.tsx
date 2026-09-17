@@ -1,13 +1,7 @@
 import { useSearchParams } from 'react-router'
 import { Button } from '@/components/ui/button'
-import type { Range, Sort } from '@/api/hn'
-import {
-  getStoredRange,
-  getStoredSort,
-  setStoredRange,
-  setStoredSort,
-} from '@/lib/preferences'
-import { ACTIVE_FILTER_CLASSES } from '@/lib/utils'
+import type { Range } from '@/api/hn'
+import { getStoredRange, setStoredRange } from '@/lib/preferences'
 import { DateRangePicker } from './DateRangePicker'
 
 const RANGES: { value: Range; label: string }[] = [
@@ -18,15 +12,9 @@ const RANGES: { value: Range; label: string }[] = [
   { value: 'all', label: 'All' },
 ]
 
-const SORTS: { value: Sort; label: string }[] = [
-  { value: 'top', label: 'Top' },
-  { value: 'hot', label: 'Hot' },
-]
-
 export function SortControls() {
   const [searchParams, setSearchParams] = useSearchParams()
   const range = searchParams.get('range') ?? getStoredRange()
-  const sort = searchParams.get('sort') ?? getStoredSort()
   const isCustomRange = searchParams.has('from') || searchParams.has('to')
 
   const changeRange = (value: Range) => {
@@ -43,7 +31,11 @@ export function SortControls() {
       <div className="flex flex-wrap items-center gap-1">
         <select
           aria-label="Sort by time range"
-          className="rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground sm:hidden dark:border-transparent dark:bg-primary dark:text-primary-foreground dark:[color-scheme:light]"
+          className={`rounded-md border px-2 py-1 text-sm sm:hidden dark:[color-scheme:light] ${
+            isCustomRange
+              ? 'border-input bg-background text-foreground'
+              : 'border-transparent bg-primary text-primary-foreground'
+          }`}
           value={isCustomRange ? '' : range}
           onChange={(e) => changeRange(e.target.value as Range)}
         >
@@ -72,33 +64,6 @@ export function SortControls() {
           ))}
         </div>
         <DateRangePicker />
-      </div>
-      <div
-        role="group"
-        aria-label="Sort by score"
-        className="flex gap-1 min-[384px]:ml-auto"
-      >
-        {SORTS.map(({ value, label }) => (
-          <Button
-            key={value}
-            type="button"
-            variant="outline"
-            className={
-              value === sort
-                ? ACTIVE_FILTER_CLASSES
-                : 'border-blue-500 dark:border-blue-400'
-            }
-            aria-pressed={value === sort}
-            onClick={() => {
-              setStoredSort(value)
-              const next = new URLSearchParams(searchParams)
-              next.set('sort', value)
-              setSearchParams(next)
-            }}
-          >
-            {label}
-          </Button>
-        ))}
       </div>
     </div>
   )

@@ -4,7 +4,7 @@ A Hacker News top stories client built with React, TypeScript, and Vite.
 
 ## Features
 
-- Infinite-scrolling story list, sortable by top/new/hot score
+- Infinite-scrolling top stories list
 - Search stories and filter by date range
 - Story detail view with threaded comments
 - AI-generated recaps of story discussions (via a Netlify function calling OpenRouter), with caching in Netlify Blobs

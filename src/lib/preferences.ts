@@ -1,6 +1,6 @@
-import type { Range, Sort } from "@/api/hn";
+import type { Range } from "@/api/hn";
 
-// Last-used range/sort, used as the landing default when the URL has no explicit param (§11 T17).
+// Last-used range, used as the landing default when the URL has no explicit param (§11 T17).
 function getStored<T extends string>(key: string, fallback: T): T {
   try {
     return (localStorage.getItem(key) as T | null) ?? fallback;
@@ -19,8 +19,6 @@ function setStored(key: string, value: string) {
 
 export const getStoredRange = () => getStored<Range>("hntop:range", "day");
 export const setStoredRange = (range: Range) => setStored("hntop:range", range);
-export const getStoredSort = () => getStored<Sort>("hntop:sort", "top");
-export const setStoredSort = (sort: Sort) => setStored("hntop:sort", sort);
 
 export type Theme = "light" | "dark";
 

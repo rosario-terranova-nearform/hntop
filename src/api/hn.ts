@@ -1,7 +1,6 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 export type Range = "day" | "week" | "month" | "year" | "all";
-export type Sort = "top" | "hot";
 
 export const RANGE_SECONDS: Record<Exclude<Range, "all">, number> = {
   day: 24 * 60 * 60,
@@ -79,14 +78,6 @@ export async function fetchStories(
   const res = await fetch(`${ALGOLIA_BASE}/search?${params}`);
   if (!res.ok) throw new Error(`Algolia search failed: ${res.status}`);
   return (await res.json()) as StoryListResult;
-}
-
-// HN's own front-page decay constant (§11: score = points / (age_hours + 2)^gravity).
-const HOT_GRAVITY = 1.8;
-
-export function hotScore(points: number, createdAtI: number, now = Date.now()): number {
-  const ageHours = (now / 1000 - createdAtI) / 3600;
-  return points / Math.pow(ageHours + 2, HOT_GRAVITY);
 }
 
 async function fetchItemWithComments(id: string): Promise<HNItem> {

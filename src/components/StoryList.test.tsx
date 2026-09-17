@@ -82,14 +82,4 @@ describe("StoryList", () => {
     expect(await screen.findByText("Story 2")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
-
-  it("sorts by hot score when sort=hot is set", async () => {
-    renderAt("/?range=day&sort=hot", [
-      { hits: [hit("old-high", 100, 48), hit("new-low", 20, 1)], nbPages: 1 },
-    ]);
-    const titles = (await screen.findAllByText(/^Story /)).map(
-      (el) => el.textContent,
-    );
-    expect(titles).toEqual(["Story new-low", "Story old-high"]);
-  });
 });
