@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   useNavigate,
   useLocation,
@@ -16,11 +16,24 @@ import { Recap } from '@/components/Recap'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import type { Range } from '@/api/hn'
-import { getStoredRange, setStoredTheme } from '@/lib/preferences'
+import { clearStoredTheme, getStoredRange, setStoredTheme } from '@/lib/preferences'
 import { applyTheme, resolveTheme } from '@/lib/theme'
 
 function ThemeToggle() {
   const [theme, setTheme] = useState(resolveTheme)
+
+  // OS/browser switched light<->dark: follow it, dropping any manual toggle override.
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = (e: MediaQueryListEvent) => {
+      const next = e.matches ? 'dark' : 'light'
+      clearStoredTheme()
+      applyTheme(next)
+      setTheme(next)
+    }
+    media.addEventListener('change', onChange)
+    return () => media.removeEventListener('change', onChange)
+  }, [])
 
   function toggle() {
     const next = theme === 'dark' ? 'light' : 'dark'

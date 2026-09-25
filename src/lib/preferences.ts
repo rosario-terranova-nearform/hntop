@@ -32,3 +32,10 @@ export function getStoredTheme(): Theme | null {
   }
 }
 export const setStoredTheme = (theme: Theme) => setStored("hntop:theme", theme);
+export function clearStoredTheme() {
+  try {
+    localStorage.removeItem("hntop:theme");
+  } catch {
+    // storage disabled, nothing to clear
+  }
+}
