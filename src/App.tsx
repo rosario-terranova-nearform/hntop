@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import {
   useNavigate,
   useLocation,
-  useSearchParams,
   Route,
   Routes,
   type Location,
@@ -12,11 +11,9 @@ import { SortControls } from '@/components/SortControls'
 import { SearchBox } from '@/components/SearchBox'
 import { StoryList } from '@/components/StoryList'
 import { StoryDetail } from '@/components/StoryDetail'
-import { Recap } from '@/components/Recap'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import type { Range } from '@/api/hn'
-import { clearStoredTheme, getStoredRange, setStoredTheme } from '@/lib/preferences'
+import { clearStoredTheme, setStoredTheme } from '@/lib/preferences'
 import { applyTheme, resolveTheme } from '@/lib/theme'
 
 function ThemeToggle() {
@@ -75,10 +72,6 @@ function Header() {
 }
 
 function Home() {
-  const [searchParams] = useSearchParams()
-  const range = (searchParams.get('range') ?? getStoredRange()) as Range
-  const isCustomRange = searchParams.has('from') || searchParams.has('to')
-
   return (
     <div className="mx-auto max-w-3xl p-4 2xl:max-w-5xl">
       <Header />
@@ -89,7 +82,6 @@ function Home() {
         <SortControls />
       </div>
       <SearchBox />
-      {!isCustomRange && <Recap range={range} />}
       <StoryList />
     </div>
   )
