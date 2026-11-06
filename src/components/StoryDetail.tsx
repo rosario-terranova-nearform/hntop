@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useParams } from "react-router";
 import DOMPurify from "dompurify";
 import { useItem, type HNItem } from "@/api/hn";
@@ -11,6 +12,11 @@ function countComments(children: HNItem[]): number {
 export function StoryDetail() {
   const { id } = useParams<{ id: string }>();
   const { data, isPending, isError } = useItem(id!);
+  // Recursive count; memoized so re-renders (e.g. modal open) don't recompute it.
+  const commentCount = useMemo(
+    () => (data ? countComments(data.children) : 0),
+    [data],
+  );
 
   if (isPending) {
     return (
@@ -57,7 +63,7 @@ export function StoryDetail() {
       </div>
       <div className="text-xs text-muted-foreground">
         {data.points ?? 0} points by {data.author ?? deleted} ·{" "}
-        {relativeAge(data.created_at_i)} · {countComments(data.children)}{" "}
+        {relativeAge(data.created_at_i)} · {commentCount}{" "}
         comments
       </div>
       {data.text && (

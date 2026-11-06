@@ -1,30 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { MemoryRouter, useLocation } from "react-router";
+import { fireEvent, screen } from "@testing-library/react";
 import { SearchBox } from "./SearchBox";
-
-function LocationDisplay() {
-  const location = useLocation();
-  return <div data-testid="location">{location.search}</div>;
-}
-
-function renderAt(path: string) {
-  return render(
-    <MemoryRouter initialEntries={[path]}>
-      <SearchBox />
-      <LocationDisplay />
-    </MemoryRouter>,
-  );
-}
+import { renderAt } from "@/test/renderAt";
 
 describe("SearchBox", () => {
   it("pre-fills from the URL's q param", () => {
-    renderAt("/?q=rust");
+    renderAt("/?q=rust", <SearchBox />);
     expect(screen.getByRole("searchbox")).toHaveValue("rust");
   });
 
   it("sets q on submit", () => {
-    renderAt("/?range=week");
+    renderAt("/?range=week", <SearchBox />);
     fireEvent.change(screen.getByRole("searchbox"), {
       target: { value: "rust" },
     });
@@ -35,7 +21,7 @@ describe("SearchBox", () => {
   });
 
   it("removes q on submit with an empty search term", () => {
-    renderAt("/?range=week&q=rust");
+    renderAt("/?range=week&q=rust", <SearchBox />);
     fireEvent.change(screen.getByRole("searchbox"), {
       target: { value: "" },
     });

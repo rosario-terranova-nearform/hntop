@@ -1,7 +1,8 @@
 import { useSearchParams } from 'react-router'
 import { Button } from '@/components/ui/button'
 import type { Range } from '@/api/hn'
-import { getStoredRange, setStoredRange } from '@/lib/preferences'
+import { setStoredRange } from '@/lib/preferences'
+import { useListParams } from '@/hooks/use-list-params'
 import { DateRangePicker } from './DateRangePicker'
 
 const RANGES: { value: Range; label: string }[] = [
@@ -14,8 +15,7 @@ const RANGES: { value: Range; label: string }[] = [
 
 export function SortControls() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const range = searchParams.get('range') ?? getStoredRange()
-  const isCustomRange = searchParams.has('from') || searchParams.has('to')
+  const { range, isCustomRange } = useListParams()
 
   const changeRange = (value: Range) => {
     setStoredRange(value)

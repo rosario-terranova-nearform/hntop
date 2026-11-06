@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import type { DateRange } from 'react-day-picker'
 import { CalendarIcon, X } from 'lucide-react'
@@ -9,6 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { useListParams } from '@/hooks/use-list-params'
 
 function parseDateStr(value: string): Date {
   const [y, m, d] = value.split('-').map(Number)
@@ -30,8 +31,9 @@ const LABEL_FORMAT = new Intl.DateTimeFormat('en', {
 export function DateRangePicker() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [open, setOpen] = useState(false)
-  const from = searchParams.get('from') ?? ''
-  const to = searchParams.get('to') ?? ''
+  const { from, to } = useListParams()
+  // Stable across renders so Calendar doesn't get a fresh `disabled` prop each time.
+  const disabled = useMemo(() => ({ after: new Date() }), [])
 
   const selected: DateRange | undefined =
     from || to
@@ -79,7 +81,7 @@ export function DateRangePicker() {
             selected={selected}
             defaultMonth={selected?.from}
             onSelect={apply}
-            disabled={{ after: new Date() }}
+            disabled={disabled}
           />
         </PopoverContent>
       </Popover>

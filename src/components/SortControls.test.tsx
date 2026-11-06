@@ -1,25 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { MemoryRouter, useLocation } from "react-router";
+import { fireEvent, screen } from "@testing-library/react";
 import { SortControls } from "./SortControls";
-
-function LocationDisplay() {
-  const location = useLocation();
-  return <div data-testid="location">{location.search}</div>;
-}
-
-function renderAt(path: string) {
-  return render(
-    <MemoryRouter initialEntries={[path]}>
-      <SortControls />
-      <LocationDisplay />
-    </MemoryRouter>,
-  );
-}
+import { renderAt } from "@/test/renderAt";
 
 describe("SortControls", () => {
   it("defaults to day when no range is in the URL", () => {
-    renderAt("/");
+    renderAt("/", <SortControls />);
     expect(screen.getByRole("button", { name: "Day" })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -27,7 +13,7 @@ describe("SortControls", () => {
   });
 
   it("pre-selects the range from the URL with no default flash", () => {
-    renderAt("/?range=week");
+    renderAt("/?range=week", <SortControls />);
     expect(screen.getByRole("button", { name: "Week" })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -39,14 +25,14 @@ describe("SortControls", () => {
   });
 
   it("updates range on click", () => {
-    renderAt("/?range=week");
+    renderAt("/?range=week", <SortControls />);
     fireEvent.click(screen.getByRole("button", { name: "Month" }));
     expect(screen.getByTestId("location").textContent).toBe("?range=month");
   });
 
   it("lands on the last-used range from localStorage when the URL has none", () => {
     localStorage.setItem("hntop:range", "year");
-    renderAt("/");
+    renderAt("/", <SortControls />);
     expect(screen.getByRole("button", { name: "Year" })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -55,7 +41,7 @@ describe("SortControls", () => {
 
   it("prefers an explicit URL range over a stored one", () => {
     localStorage.setItem("hntop:range", "year");
-    renderAt("/?range=day");
+    renderAt("/?range=day", <SortControls />);
     expect(screen.getByRole("button", { name: "Day" })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -63,7 +49,7 @@ describe("SortControls", () => {
   });
 
   it("remembers range clicks for next time", () => {
-    renderAt("/?range=week");
+    renderAt("/?range=week", <SortControls />);
     fireEvent.click(screen.getByRole("button", { name: "Month" }));
     expect(localStorage.getItem("hntop:range")).toBe("month");
   });

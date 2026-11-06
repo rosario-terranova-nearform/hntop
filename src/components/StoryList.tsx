@@ -1,21 +1,10 @@
 import { useEffect, useRef } from "react";
-import { useSearchParams } from "react-router";
-import { dateStringToUnix, useInfiniteStories, type Range } from "@/api/hn";
+import { useInfiniteStories } from "@/api/hn";
 import { StoryCard } from "@/components/StoryCard";
-import { getStoredRange } from "@/lib/preferences";
+import { useListParams } from "@/hooks/use-list-params";
 
 export function StoryList() {
-  const [searchParams] = useSearchParams();
-  const range = (searchParams.get("range") ?? getStoredRange()) as Range;
-  const query = searchParams.get("q") ?? "";
-  const fromParam = searchParams.get("from");
-  const toParam = searchParams.get("to");
-  const dateBounds = fromParam || toParam
-    ? {
-        from: fromParam ? dateStringToUnix(fromParam) : undefined,
-        to: toParam ? dateStringToUnix(toParam, true) : undefined,
-      }
-    : undefined;
+  const { range, query, dateBounds } = useListParams();
 
   const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteStories(range, query, dateBounds);

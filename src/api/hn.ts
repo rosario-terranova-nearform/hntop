@@ -87,7 +87,7 @@ async function fetchItemWithComments(id: string): Promise<HNItem> {
 }
 
 // Backoff instead of React Query's default 3 immediate retries (§8: Algolia rate limits).
-export const retryDelay = (attempt: number) => Math.min(1000 * 2 ** attempt, 10_000);
+const retryDelay = (attempt: number) => Math.min(1000 * 2 ** attempt, 10_000);
 
 export function useInfiniteStories(range: Range, query = "", dateBounds?: DateBounds) {
   return useInfiniteQuery({
